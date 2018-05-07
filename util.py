@@ -33,3 +33,18 @@ def spherical_to_cartesian(point3D):
 
 def geo_to_cartesian(point3D, R_e = 6.371008e8):
     return spherical_to_cartesian(geo_to_spherical(point3D, R_e))
+
+
+def average_longitude(a): 
+    """Averages longitude values, returning size nlat+2,
+    assumes longitude is last index"""
+    ntime, nilev, nlat, nlon = a.shape
+    south_avg = np.mean(a[:,:,0,:].T, axis = 0).T
+    south_avg = south_avg.repeat(nlon, axis = 1).reshape((ntime, nilev, nlon))
+
+    north_avg = np.mean(a[:,:,-1,:].T, axis = 0).T
+    north_avg = north_avg.repeat(nlon, axis = 1).reshape((ntime, nilev, nlon))
+
+    result = np.insert(a, 0, south_avg, axis = 2)
+    result = np.insert(result, result.shape[2], north_avg, axis = 2)
+    return result

@@ -111,8 +111,7 @@ class TimeInterpolator2D(object):
 class TIEGCM(object):
 	def __init__(self, filename):
 		self.rootgrp = Dataset(filename, 'r')
-		
-		self.lat = np.array(self.rootgrp.variables['lat'])
+		self.lat = np.concatenate(([-90], np.array(self.rootgrp.variables['lat']), [90]))
 		self.lon = np.array(self.rootgrp.variables['lon'])
 		self.wrap_longitude()
 
@@ -132,7 +131,7 @@ class TIEGCM(object):
 
 		self.wrap_variable('Z')
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
-		
+		self.z = average_longitude(self.z)
 
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
@@ -457,7 +456,7 @@ def test_variable_list():
 def test_time_interpolate_speed():
 	## This should replicate the delaunay test above
 	tiegcm = TIEGCM(test_file)
-	npoints = 10000
+	npoints = 100
 	print 'speed test started with', npoints, 'points'
 	t = time.time()
 	expected = np.array(z_test)
@@ -479,4 +478,33 @@ def test_time_interpolate_speed():
 	print 'speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
 	# variable_name = 'NE'
 	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)
+
+def test_time_interpolate_pole():
+	tiegcm = TIEGCM(test_file)
+	variable_name ='Z'
+
+	point = Point3D(z_test,  88.,  tiegcm.lon.min() )
+	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+	expected = np.array(z_test)
+	assert isclose(result, expected)
+
+	point = Point3D(z_test,  88.,  tiegcm.lon.min() - 1 )
+	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+	expected = np.array(z_test)
+	assert isclose(result, expected)
+
+	point = Point3D(z_test,  88.,  tiegcm.lon.max() )
+	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+	expected = np.array(z_test)
+	assert isclose(result, expected)
+
+	point = Point3D(z_test,  88.,  tiegcm.lon.max() + 1)
+	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+	expected = np.array(z_test)
+	assert isclose(result, expected)
+
+
+
+
+
 
