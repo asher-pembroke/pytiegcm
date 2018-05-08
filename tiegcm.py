@@ -14,36 +14,6 @@ import time
 from util import *
 
 
-def group_dimensional(rootgrp, verbose = False):
-    dimensional = defaultdict(list)
-    for k,v in rootgrp.variables.items():
-        for i in range(5):
-            if len(v.shape) == i:
-                dimensional[str(i)+'-d'].append(k)
-    
-    if verbose:
-        for k,v in dimensional.items():
-            print k
-            print describe(rootgrp, dimensional[k])
-    return dimensional
-
-def describe(rootgrp, 
-             variables = ['time', 'ilev','lat', 'lon'], 
-             attributes = ['units', 'long_name', 'shape']):
-    results = pd.DataFrame(columns = attributes)
-    for v in variables:
-        array = rootgrp.variables[v]
-        attrs = []
-        for attr in attributes:
-            try:
-                attribute = array.__getattribute__(attr)
-            except:
-                attribute = None
-            attrs.append(attribute)
-        results = results.append(pd.Series(attrs, index = attributes, name = v))
-    return results
-
-
 def geo_to_spherical(point3D, R_e = 6.371008e8):
     r = point3D.height + R_e
     theta = np.pi*(90 - point3D.latitude)/180
@@ -129,9 +99,9 @@ class TIEGCM(object):
 		
 		self.set_points2D() # for testing
 
+		self.set_variable_bc('Z') #prior to wrapping to avoid double counting
 		self.wrap_variable('Z')
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
-		self.z = average_longitude(self.z)
 
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
@@ -142,8 +112,14 @@ class TIEGCM(object):
 	def list_3d_variables(self):
 	    return [k for k in self.rootgrp.variables if len(self.rootgrp.variables[k].shape) == 4]
 
+	def set_variable_bc(self, variable_name, average = True):
+		if average:
+			self.rootgrp.variables[variable_name] = average_longitude(self.rootgrp.variables[variable_name])
+		else:
+			pass
+
 	def wrap_variables(self):
-		"""Wrap all variables by longitude"""
+		"""Wrap all 3D variables by longitude"""
 		self.wrapped = []
 		for k,variable in self.rootgrp.variables.items():
 			if len(variable.shape) == 3: # 3D variable
