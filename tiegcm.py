@@ -12,7 +12,7 @@ from scipy import interpolate
 from collections import OrderedDict
 import time
 from util import *
-
+from util import boundary_conditions
 
 def geo_to_spherical(point3D, R_e = 6.371008e8):
     r = point3D.height + R_e
@@ -83,6 +83,10 @@ class TIEGCM(object):
 		self.rootgrp = Dataset(filename, 'r')
 		self.lat = np.concatenate(([-90], np.array(self.rootgrp.variables['lat']), [90]))
 		self.lon = np.array(self.rootgrp.variables['lon'])
+
+		self.boundary_set = []
+		self.wrapped = []
+
 		self.wrap_longitude()
 
 		self.ilev = np.array(self.rootgrp.variables['ilev'])
@@ -95,11 +99,12 @@ class TIEGCM(object):
 
 		self.set_interpolators()
 
-		self.wrap_variables()
+		self.set_3d_boundary_conditions()
+		self.wrap_3d_variables()
 		
 		self.set_points2D() # for testing
 
-		self.set_variable_bc('Z') #prior to wrapping to avoid double counting
+		self.set_variable_boundary_condition('Z') #prior to wrapping to avoid double counting
 		self.wrap_variable('Z')
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
 
@@ -112,19 +117,25 @@ class TIEGCM(object):
 	def list_3d_variables(self):
 	    return [k for k in self.rootgrp.variables if len(self.rootgrp.variables[k].shape) == 4]
 
-	def set_variable_bc(self, variable_name, average = True):
-		if average:
-			self.rootgrp.variables[variable_name] = average_longitude(self.rootgrp.variables[variable_name])
-		else:
-			pass
+	def set_variable_boundary_condition(self, variable_name):
+		"""If the boundary condition has not been set, set it"""
+		if variable_name not in self.boundary_set:
+			bc = boundary_conditions[variable_name]
+			if bc == 'average':
+				self.rootgrp.variables[variable_name] = average_longitude(self.rootgrp.variables[variable_name])
+				self.boundary_set.append(variable_name)
+			elif bc == 'extend':
+				self.rootgrp.variables[variable_name] = copy_longitude(self.rootgrp.variables[variable_name])
+				self.boundary_set.append(variable_name)
+			else:
+				pass
 
-	def wrap_variables(self):
+	def set_3d_boundary_conditions(self):
 		"""Wrap all 3D variables by longitude"""
-		self.wrapped = []
-		for k,variable in self.rootgrp.variables.items():
+		for k, variable in self.rootgrp.variables.items():
 			if len(variable.shape) == 3: # 3D variable
-				self.rootgrp.variables[k] = np.concatenate((variable, variable[:,:,0:1]), axis = 2)
-				self.wrapped.append(k)
+				self.set_variable_boundary_condition(k)
+				
 
 	def wrap_variable(self, variable_name):
 		if variable_name not in self.wrapped:
@@ -135,6 +146,13 @@ class TIEGCM(object):
 			if len(variable.shape) == 4: # 4D variable
 				self.rootgrp.variables[variable_name] = np.concatenate((variable, variable[:,:,:,0:1]), axis = 3)
 				self.wrapped.append(variable_name)
+
+
+	def wrap_3d_variables(self):
+		"""Wrap all 3D variables by longitude"""
+		for variable_name, variable in self.rootgrp.variables.items():
+			if len(variable.shape) == 3: # 3D variable
+				self.wrap_variable(variable_name)
 
 
 	def wrap_longitude(self):
@@ -216,6 +234,7 @@ class TIEGCM(object):
 			print slice_key.__repr__()
 			print column_slice.__repr__()
 			raise
+		self.set_variable_boundary_condition(slice_key.variable)
 		self.wrap_variable(slice_key.variable)
 		variable = np.array(self.rootgrp[slice_key.variable])[column_slice][time_index].ravel()
 
@@ -239,6 +258,7 @@ class TIEGCM(object):
 			print slice_key.__repr__()
 			print column_slice.__repr__()
 			raise
+		self.set_variable_boundary_condition(slice_key.variable)
 		self.wrap_variable(slice_key.variable)
 		variable = np.array(self.rootgrp[slice_key.variable])[column_slice][time_index].ravel()
 
@@ -319,10 +339,15 @@ def test_3D_column():
 
 def test_column_slice():
 	tiegcm = TIEGCM(test_file)
-	point = Point4D((tiegcm.ut[0]+tiegcm.ut[1])/2, 128.14398737, 87.,  170.  )
+	point = Point4D((tiegcm.ut[0]+tiegcm.ut[1])/2, 128.14398737, 87.,  171.  )
 	column = tiegcm.get_column_slicer_4D(point)
-	assert column == (slice(0, 2, None), slice(None, None, None), slice(34, 36, None), slice(70, 72, None))
 
+	assert point.latitude > tiegcm.lat[column.latitude][0]
+	assert point.latitude < tiegcm.lat[column.latitude][1]
+	assert point.longitude > tiegcm.lon[column.longitude][0]
+	assert point.longitude < tiegcm.lon[column.longitude][1]
+
+	
 
 def test_Delaunay_height():
 	tiegcm = TIEGCM(test_file)

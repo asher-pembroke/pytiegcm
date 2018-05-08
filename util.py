@@ -21,6 +21,51 @@ Point3DCartesian = namedtuple("Point3DCartesian", ['x','y','z'])
 Point3DSpherical = namedtuple("Point3DSpherical", ['r','theta','phi'])
 
 
+boundary_conditions = dict( TEC = 'average',
+                            QJOULE_INTEG = 'average',
+                            EFLUX = 'average',
+                            HMF2 = 'average',
+                            NMF2 = 'average',
+                            TLBC = 'average',
+                            ULBC = 'extend', #?
+                            VLBC = 'extend', #?
+                            TLBC_NM = 'average', #?
+                            ULBC_NM = 'extend', #?
+                            VLBC_NM = 'extend', #?
+                            TN = 'average',
+                            UN = 'extend',
+                            VN = 'extend',
+                            O1 = 'average',
+                            NO = 'average',
+                            N4S = 'average',
+                            HE = 'average',
+                            NE = 'average',
+                            TE = 'average',
+                            TI = 'average',
+                            O2 = 'average',
+                            O2P_ELD = 'average', #?
+                            OMEGA = 'average',
+                            POTEN = 'average',
+                            VI_ExB = 'extend',
+                            UI_ExB = 'extend',
+                            WI_ExB = 'average', #?
+                            OP = 'average',
+                            N2P_ELD = 'average',
+                            NPLUS = 'average',
+                            NOP_ELD = 'average',
+                            SIGMA_PED = 'average',
+                            SIGMA_HAL = 'average',
+                            DEN = 'average',
+                            QJOULE = 'average',
+                            Z = 'average',
+                            ZG = 'average',
+                            O_N2 = 'average',
+                            N2D_ELD = 'average',
+                            O2N = 'average',
+                            N2N = 'average',
+                            ZMAG = 'average',                           
+                          )
+
 def group_dimensional(rootgrp, verbose = False):
 	dimensional = defaultdict(list)
 	for k,v in rootgrp.variables.items():
