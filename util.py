@@ -82,7 +82,7 @@ def group_dimensional(rootgrp, verbose = False):
 def describe(rootgrp, 
 			 variables = ['time', 'ilev','lat', 'lon'], 
 			 attributes = ['units', 'long_name', 'shape']):
-	results = pd.DataFrame(columns = attributes)
+	results = pd.DataFrame(columns = attributes + ['min', 'max'])
 	for v in variables:
 		array = rootgrp.variables[v]
 		attrs = []
@@ -92,7 +92,13 @@ def describe(rootgrp,
 			except:
 				attribute = None
 			attrs.append(attribute)
-		results = results.append(pd.Series(attrs, index = attributes, name = v))
+		try:
+			attrs.append(array.__array__().min())
+			attrs.append(array.__array__().max())
+		except:
+			attrs.append(None)
+			attrs.append(None)
+		results = results.append(pd.Series(attrs, index = attributes + ['min', 'max'], name = v))
 	return results
 
 def geo_to_spherical(point3D, ):

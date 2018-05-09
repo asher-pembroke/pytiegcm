@@ -108,6 +108,8 @@ class TIEGCM(object):
 		self.wrap_variable('Z')
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
 
+		self.fill_value = 1.0
+
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
 
@@ -239,7 +241,7 @@ class TIEGCM(object):
 		variable = np.array(self.rootgrp[slice_key.variable])[column_slice][time_index].ravel()
 
 		try:
-			return LinearNDInterpolator(delaunay, variable)
+			return LinearNDInterpolator(delaunay, variable, fill_value = self.fill_value)
 		except:
 			print '\n', slice_key
 			print column_slice
@@ -263,7 +265,7 @@ class TIEGCM(object):
 		variable = np.array(self.rootgrp[slice_key.variable])[column_slice][time_index].ravel()
 
 		try:
-			return LinearNDInterpolator(delaunay, variable)
+			return LinearNDInterpolator(delaunay, variable, self.fill_value)
 		except:
 			print '\n', slice_key
 			print column_slice
@@ -358,7 +360,7 @@ def test_Delaunay_height():
 	z = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))[0][0]
 	
 	scaled_point = z_test/tiegcm.z_scale, point[2], point[3]
-	linear_interpolator = LinearNDInterpolator(delaunay, z.ravel()/tiegcm.z_scale)
+	linear_interpolator = LinearNDInterpolator(delaunay, z.ravel()/tiegcm.z_scale, fill_value = tiegcm.fill_value)
 	
 	assert isclose(scaled_point[0], linear_interpolator(scaled_point))
 
@@ -505,7 +507,16 @@ def test_time_interpolate_pole():
 	assert isclose(result, expected)
 
 
+def test_high_altitude():
+	tiegcm = TIEGCM(test_file)
+	variable_name ='Z'
+	z_max = 1.1*tiegcm.z.max()
+	print 'test_high_altitude:', z_max
 
+	point = Point3D(z_max,  88.,  tiegcm.lon.min() )
+	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+	expected = np.array(z_max)
+	assert isclose(result, tiegcm.fill_value)
 
 
 
