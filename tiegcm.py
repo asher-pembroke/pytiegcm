@@ -125,7 +125,7 @@ class TIEGCM(object):
 		try:
 			return self.high_altitude_trees[time_index]
 		except:
-			z = self.z[time_index][-1]
+			z = self.z[time_index, -1, :, :]
 			lat = self.lat_[-1]
 			lon = self.lon_[-1]
 
@@ -343,29 +343,41 @@ class TIEGCM(object):
 		return self.interpolators[slice_key](p)		
 
 
+	def get_coordinate_indices(self, vertices, target_shape):
+		return np.array(zip(*np.unravel_index(vertices, target_shape)))
+
 	def interpolate_high_altitude(self, p, variable_name, time_index, return_variable = False):
 		tree = self.get_outer_boundary_kdtree(time_index) #store this in a dict
 
 		distances, vertices = tree.query(p, p = 1, k = 3) # p = 1 for Manhattan distance!
 
-		coord_indices = np.array(zip(*np.unravel_index(vertices, self.z.shape)))
+		coord_indices = self.get_coordinate_indices(vertices, self.z[time_index, -1, :, :].shape)
 		lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
 
-		variable = self.rootgrp.variables[variable_name][time_index][-1][lat_indices, lon_indices]
+		# lnd_lat = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lat_[-1][lat_indices, lon_indices])
+		# lnd_lon = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lon_[-1][lat_indices, lon_indices])
+
+		variable = self.rootgrp.variables[variable_name][time_index, -1, lat_indices, lon_indices].ravel()
 		lnd = LinearNDInterpolator(tree.data[vertices][:,1:], variable)
 
 		if not return_variable:
 			return float(lnd(p[1:]))
 		else:
-			return float(lnd(p[1:])), variable
+			return float(lnd(p[1:])), variable, lat_indices, lon_indices
 
-	def time_interpolate_high_altitude(self, p, variable_name, time):
-		t0 = int(time)
+	def time_interpolate_high_altitude(self, p, variable_name, time, return_variables = False):
+		column_slicer = self.get_column_slicer_4D(Point4D(time, *p))
+		t0 = column_slicer.time.start
 		t1 = t0 + 1
-		r0 = self.interpolate_high_altitude(p, variable_name, t0)
-		r1 = self.interpolate_high_altitude(p, variable_name, t1)
+		if not return_variables:
+			r0 = self.interpolate_high_altitude(p, variable_name, t0)
+			r1 = self.interpolate_high_altitude(p, variable_name, t1)
+			return np.interp(time, [t0, t1], [r0, r1])
+		else:
+			r0, variables0, lat_indices0, lon_indices0 = self.interpolate_high_altitude(p, variable_name, t0, return_variables)
+			r1, variables1, lat_indices1, lon_indices1 = self.interpolate_high_altitude(p, variable_name, t1, return_variables)
 
-		return np.interp(time, [t0, t1], [r0, r1])
+		return np.interp(time, [t0, t1], [r0, r1]), (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1)
 
 z_test = 39005780. # a mid range test height in cm 
 
@@ -390,7 +402,6 @@ def test_column_slice():
 	assert point.longitude < tiegcm.lon[column.longitude][1]
 
 	
-
 def test_Delaunay_height():
 	tiegcm = TIEGCM(test_file)
 	point = Point4D(3.5, z_test,  87.,  170. )
@@ -496,6 +507,8 @@ def test_variable_list():
 	for variable_name in varlist_3d:
 		assert len(tiegcm.rootgrp.variables[variable_name].shape) == 4
 
+
+
 def test_time_interpolate_speed():
 	## This should replicate the delaunay test above
 	tiegcm = TIEGCM(test_file)
@@ -546,6 +559,32 @@ def test_time_interpolate_pole():
 	expected = np.array(z_test)
 	assert isclose(result, expected)
 
+def test_high_altitude_triangle():
+	"""Test precision of triangle interpolation: 
+		lat/lon interpolation should match query point"""
+	tiegcm = TIEGCM(test_file)
+
+	time_index = 0
+	z = tiegcm.z[time_index][-1]
+
+	z_test = 1.1*z.max() # high altitude test
+	p = Point3D(z_test, 20.5, .5)
+
+	tree = tiegcm.get_outer_boundary_kdtree(time_index)
+	distances, vertices = tree.query(p, p = 1, k = 3) # p = 1 for Manhattan distance!
+
+	target_shape = tiegcm.lat_[-1].shape
+	coord_indices = np.array(zip(*np.unravel_index(vertices, target_shape)))
+
+	lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
+
+	lnd_lat = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lat_[-1][lat_indices, lon_indices])
+	lnd_lon = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lon_[-1][lat_indices, lon_indices])
+
+	print 'test_high_altitude_triangle: lat,lon_indices', lat_indices, lon_indices
+
+	assert (float(lnd_lat(p[1:])) == p.latitude)
+	assert (float(lnd_lon(p[1:])) == p.longitude)
 
 
 def test_high_altitude_in_bounds():
@@ -561,7 +600,8 @@ def test_high_altitude_in_bounds():
 		p = Point3D(z_test, 20.5, .5)
 
 		variable_name = 'Z'
-		result, variable = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
+		result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
+
 		assert variable.min() <= result <= variable.max()
 
 
@@ -580,7 +620,7 @@ def test_high_altitude_speed():
 			point = Point3D(z_test,  lat,  lon )
 			variable_name ='Z'
 
-			result, variable = tiegcm.interpolate_high_altitude(point, variable_name, time_index, True)
+			result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(point, variable_name, time_index, True)
 			try:
 				assert variable.min() <= result <= variable.max()
 			except:
@@ -591,59 +631,78 @@ def test_high_altitude_speed():
 					raise
 	except:
 		print 'test failed at', point
-		print 'result:', result
-		print 'nearby variable {} values:'.format(variable_name), variable
+		# print 'result:', result
+		# print 'nearby variable {} values:'.format(variable_name), variable
 		raise
 	dt = time.time() - t
 	print 'high altitude speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
 	# variable_name = 'NE'
 	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)	
 
-def test_high_altitude_triangle():
-	"""Test precision of triangle interpolation: 
-		lat/lon interpolation should match query point"""
-	tiegcm = TIEGCM(test_file)
-
-	time_index = 0
-	z = tiegcm.z[time_index][-1]
-
-	z_test = 1.1*z.max() # high altitude test
-	p = Point3D(z_test, 20.5, .5)
-
-	tree = tiegcm.get_outer_boundary_kdtree(time_index)
-	distances, vertices = tree.query(p, p = 1, k = 3) # p = 1 for Manhattan distance!
-
-	coord_indices = np.array(zip(*np.unravel_index(vertices, z.shape)))
-
-	lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
-
-	lnd_lat = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lat_[-1][lat_indices, lon_indices])
-	lnd_lon = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lon_[-1][lat_indices, lon_indices])
-
-	assert (float(lnd_lat(p[1:])) == p.latitude)
-	assert (float(lnd_lon(p[1:])) == p.longitude)
 
 def test_time_interpolate_high_altitude():
-
 	tiegcm = TIEGCM(test_file)
 
-	time = 3
-	z = tiegcm.z[int(time)][-1] # topmost layer
-	z_test = 1.0*z.max() # high altitude test
+	time = 3.5
 
+	z_max = tiegcm.z.max()
+	z_test = 1.1*z_max
 	p4 = Point4D(time, z_test, 20.5, .5)
+
+	column_slicer = tiegcm.get_column_slicer_4D(p4)
+	z_column, lat_column, lon_column = tiegcm.get_3D_column(column_slicer)
+
+	time_index = column_slicer.time.start
+
+
+	# z = tiegcm.z[time_index, -1, :, :] # topmost layer
+	
+	top_z = z_column[:,-1,:,:]
+
+
 	p = Point3D(*p4[1:])
-	result = tiegcm.time_interpolate_high_altitude(p, 'Z', time)
+	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'Z', time, True)
 	
-	# get the top of the corresponding 3d column
+	try:
+		lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
+		assert lat_layers.min() <= p.latitude <= lat_layers.max()
 
-	z_column, lat_column, lon_column = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(p4))
-	top_z = z_column
-	print result
-	# print top_z
-	print p4
-	print p
+		lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
+		assert lon_layers.min() <= p.longitude <= lon_layers.max()
+		
+		z_layers = np.stack((variables0, variables1))
+		assert z_layers.min() <= result <= z_layers.max() # result is between interpolating triangles
 
-	assert top_z.min() <= result <= top_z.max()
-	
+		assert top_z.min() <= result <= top_z.max() # result has position between column tops
+
+	except:
+		# get the top of the corresponding 3d column
+		
+		print '\n\nerrors in test_time_interpolate_high_altitude'
+		print 'shape of Z array', tiegcm.rootgrp.variables['Z'].shape
+		print 'shape of top z', top_z.shape
+		print '\ntest_time_interpolate_high_altitude - 4D query:'
+		print p4, '3D query', p
+		print 'test_time_interpolate_high_altitude - result:', result
+		print 'test_time_interpolate_high_altitude - return variables:'
+		print variables0
+		print variables1
+		print 'test_time_interpolate_high_altitude - return lat, lon indices'
+		print lat_indices0, lat_indices1
+		print lon_indices0, lon_indices1
+		print 'lat triangles:', tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]
+		print 'lon triangles:', tiegcm.lon[lon_indices1], tiegcm.lon[lon_indices1]
+		print 'test_time_interpolate_high_altitude - z_column shape:', z_column.shape
+		print 'test_time_interpolate_high_altitude - z_column top:'
+		print top_z
+		print 'test_time_interpolate_high_altitude - lat_column shape:', lat_column.shape
+		print 'test_time_interpolate_high_altitude - lat_column top:'
+		print lat_column[-1,:,:]
+		print 'test_time_interpolate_high_altitude - lon_column shape:', lon_column.shape
+		print 'test_time_interpolate_high_altitude - lon_column top:'
+		print lon_column[-1,:,:]
+
+		raise
+		
+		
 
