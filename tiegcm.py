@@ -108,7 +108,7 @@ class TIEGCM(object):
 		self.set_variable_boundary_condition('Z') #prior to wrapping to avoid double counting
 		self.wrap_variable('Z')
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
-
+		self.high_altitude_trees = dict()
 		self.fill_value = 1.0
 
 	def get_variable_unit(self, variable_name):
@@ -122,12 +122,17 @@ class TIEGCM(object):
 
 	def get_outer_boundary_kdtree(self, time_index):
 		"""Initialize a spatial index for the upper boundary of the model"""
-		z = self.z[time_index][-1]
-		lat = self.lat_[-1]
-		lon = self.lon_[-1]
+		try:
+			return self.high_altitude_trees[time_index]
+		except:
+			z = self.z[time_index][-1]
+			lat = self.lat_[-1]
+			lon = self.lon_[-1]
 
-		outer_points = np.array(zip(z.ravel()/z.max(), lat.ravel(), lon.ravel()))
-		return scipy.spatial.KDTree(outer_points)
+			outer_points = np.array(zip(z.ravel()/z.max(), lat.ravel(), lon.ravel()))
+			tree = scipy.spatial.KDTree(outer_points)
+			self.high_altitude_trees[time_index] = tree
+			return self.high_altitude_trees[time_index]
 
 	def set_variable_boundary_condition(self, variable_name):
 		"""If the boundary condition has not been set, set it"""
@@ -547,17 +552,17 @@ def test_high_altitude_in_bounds():
 	"""Test that high latitude interpolation returns something reasonable"""
 	tiegcm = TIEGCM(test_file)
 	
-	time_index = 0
-	z = tiegcm.z[time_index][-1]
+	for time_index in range(5):
+		time_index = 0
+		z = tiegcm.z[time_index][-1]
 
-	z_test = 1.1*z.max() # high altitude test
+		z_test = 1.1*z.max() # high altitude test
 
-	p = Point3D(z_test, 20.5, .5)
+		p = Point3D(z_test, 20.5, .5)
 
-	variable_name = 'Z'
-	result, variable = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
-
-	assert variable.min() <= result <= variable.max()
+		variable_name = 'Z'
+		result, variable = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
+		assert variable.min() <= result <= variable.max()
 
 
 def test_high_altitude_speed():
@@ -590,7 +595,7 @@ def test_high_altitude_speed():
 		print 'nearby variable {} values:'.format(variable_name), variable
 		raise
 	dt = time.time() - t
-	print 'speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
+	print 'high altitude speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
 	# variable_name = 'NE'
 	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)	
 
@@ -622,11 +627,11 @@ def test_time_interpolate_high_altitude():
 
 	tiegcm = TIEGCM(test_file)
 
-	time = 3.5
+	time = 3
 	z = tiegcm.z[int(time)][-1] # topmost layer
 	z_test = 1.0*z.max() # high altitude test
 
-	p4 = Point4D(3.5, z_test, 20.5, .5)
+	p4 = Point4D(time, z_test, 20.5, .5)
 	p = Point3D(*p4[1:])
 	result = tiegcm.time_interpolate_high_altitude(p, 'Z', time)
 	
