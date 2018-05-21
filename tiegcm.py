@@ -13,7 +13,8 @@ from scipy import interpolate
 from collections import OrderedDict
 import time
 from util import *
-from util import boundary_conditions
+from util import boundary_conditions, fill_masked
+import numpy.ma as ma
 
 def geo_to_spherical(point3D, R_e = 6.371008e8):
     r = point3D.height + R_e
@@ -134,15 +135,25 @@ class TIEGCM(object):
 			self.high_altitude_trees[time_index] = tree
 			return self.high_altitude_trees[time_index]
 
-	def set_variable_boundary_condition(self, variable_name):
+	def set_variable_boundary_condition(self, variable_name, verbose = False):
 		"""If the boundary condition has not been set, set it"""
 		if variable_name not in self.boundary_set:
 			bc = boundary_conditions[variable_name]
+			variable = self.rootgrp.variables[variable_name].__array__()
+			if verbose:
+				print 'setting boundary condition:', variable_name, bc, type(variable)
 			if bc == 'average':
-				self.rootgrp.variables[variable_name] = average_longitude(self.rootgrp.variables[variable_name])
+				if type(variable) == ma.MaskedArray:
+					variable = fill_masked(variable)
+					average = average_longitude(variable, verbose)
+				else:
+					average = average_longitude(variable, verbose)
+				if verbose:
+					print 'average min,max', average.min(), average.max()
+				self.rootgrp.variables[variable_name] = average
 				self.boundary_set.append(variable_name)
 			elif bc == 'extend':
-				self.rootgrp.variables[variable_name] = copy_longitude(self.rootgrp.variables[variable_name])
+				self.rootgrp.variables[variable_name] = copy_longitude(variable)
 				self.boundary_set.append(variable_name)
 			else:
 				pass
@@ -156,7 +167,7 @@ class TIEGCM(object):
 
 	def wrap_variable(self, variable_name):
 		if variable_name not in self.wrapped:
-			variable = self.rootgrp.variables[variable_name]
+			variable = self.rootgrp.variables[variable_name].__array__()
 			if len(variable.shape) == 3: # 3D variable
 				self.rootgrp.variables[variable_name] = np.concatenate((variable, variable[:,:,0:1]), axis = 2)
 				self.wrapped.append(variable_name)
@@ -347,19 +358,31 @@ class TIEGCM(object):
 		return np.array(zip(*np.unravel_index(vertices, target_shape)))
 
 	def interpolate_high_altitude(self, p, variable_name, time_index, return_variable = False):
+		self.set_variable_boundary_condition(variable_name) #prior to wrapping to avoid double counting
+		self.wrap_variable(variable_name)
+
 		tree = self.get_outer_boundary_kdtree(time_index) #store this in a dict
 
 		distances, vertices = tree.query(p, p = 1, k = 3) # p = 1 for Manhattan distance!
 
 		coord_indices = self.get_coordinate_indices(vertices, self.z[time_index, -1, :, :].shape)
 		lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
+		# print 'interpolate_high_altitude:', \
+		# 	variable_name, \
+		# 	self.rootgrp.variables[variable_name].shape, \
+		# 	self.rootgrp.variables[variable_name].min(), \
+		# 	self.rootgrp.variables[variable_name].max(),\
+		# 	lat_indices, lon_indices
 
-		# lnd_lat = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lat_[-1][lat_indices, lon_indices])
-		# lnd_lon = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lon_[-1][lat_indices, lon_indices])
 
-		variable = self.rootgrp.variables[variable_name][time_index, -1, lat_indices, lon_indices].ravel()
-		lnd = LinearNDInterpolator(tree.data[vertices][:,1:], variable)
-
+		try:
+			variable = self.rootgrp.variables[variable_name][time_index, -1, lat_indices, lon_indices].ravel()
+			lnd = LinearNDInterpolator(tree.data[vertices][:,1:], variable)
+		except:
+			print 'problem in interpolate high altitude:'
+			print self.rootgrp.variables[variable_name].shape
+			print self.rootgrp.variables['Z'].shape
+			raise
 		if not return_variable:
 			return float(lnd(p[1:]))
 		else:
@@ -603,6 +626,7 @@ def test_high_altitude_in_bounds():
 		result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
 
 		assert variable.min() <= result <= variable.max()
+		print 'test_high_altitude_in_bounds', result
 
 
 def test_high_altitude_speed():
@@ -663,46 +687,60 @@ def test_time_interpolate_high_altitude():
 	p = Point3D(*p4[1:])
 	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'Z', time, True)
 	
-	try:
-		lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
-		assert lat_layers.min() <= p.latitude <= lat_layers.max()
+	lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
+	assert lat_layers.min() <= p.latitude <= lat_layers.max()
 
-		lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
-		assert lon_layers.min() <= p.longitude <= lon_layers.max()
-		
-		z_layers = np.stack((variables0, variables1))
-		assert z_layers.min() <= result <= z_layers.max() # result is between interpolating triangles
+	lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
+	assert lon_layers.min() <= p.longitude <= lon_layers.max()
+	
+	z_layers = np.stack((variables0, variables1))
+	assert z_layers.min() <= result <= z_layers.max() # result is between interpolating triangles
 
-		assert top_z.min() <= result <= top_z.max() # result has position between column tops
+	assert top_z.min() <= result <= top_z.max() # result has position between column tops
 
-	except:
-		# get the top of the corresponding 3d column
-		
-		print '\n\nerrors in test_time_interpolate_high_altitude'
-		print 'shape of Z array', tiegcm.rootgrp.variables['Z'].shape
-		print 'shape of top z', top_z.shape
-		print '\ntest_time_interpolate_high_altitude - 4D query:'
-		print p4, '3D query', p
-		print 'test_time_interpolate_high_altitude - result:', result
-		print 'test_time_interpolate_high_altitude - return variables:'
-		print variables0
-		print variables1
-		print 'test_time_interpolate_high_altitude - return lat, lon indices'
-		print lat_indices0, lat_indices1
-		print lon_indices0, lon_indices1
-		print 'lat triangles:', tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]
-		print 'lon triangles:', tiegcm.lon[lon_indices1], tiegcm.lon[lon_indices1]
-		print 'test_time_interpolate_high_altitude - z_column shape:', z_column.shape
-		print 'test_time_interpolate_high_altitude - z_column top:'
-		print top_z
-		print 'test_time_interpolate_high_altitude - lat_column shape:', lat_column.shape
-		print 'test_time_interpolate_high_altitude - lat_column top:'
-		print lat_column[-1,:,:]
-		print 'test_time_interpolate_high_altitude - lon_column shape:', lon_column.shape
-		print 'test_time_interpolate_high_altitude - lon_column top:'
-		print lon_column[-1,:,:]
+def test_time_interpolate_high_altitude_temperature():
+	tiegcm = TIEGCM(test_file)
 
-		raise
-		
+	time = 3.5
+
+	z_max = tiegcm.z.max()
+	z_test = 1.1*z_max
+	p4 = Point4D(time, z_test, 20.5, .5)
+
+	column_slicer = tiegcm.get_column_slicer_4D(p4)
+	z_column, lat_column, lon_column = tiegcm.get_3D_column(column_slicer)
+
+	time_index = column_slicer.time.start
+
+	p = Point3D(*p4[1:])
+	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'TN', time, True)
+	
+	lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
+	assert lat_layers.min() <= p.latitude <= lat_layers.max()
+
+	lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
+	assert lon_layers.min() <= p.longitude <= lon_layers.max()
+	
+	tn_layers = np.stack((variables0, variables1))
+	assert tn_layers.min() <= result <= tn_layers.max() # result is between interpolating triangles
+
+	print 'tn_layers:'
+	print tn_layers
+
+	## interpolation causes the masked values to get filled
+	top_z = z_column[:,-1,:,:]
+	variable = np.array(tiegcm.rootgrp['TN'])[column_slicer]
+	top_tn = variable[:,-1,:,:]
+
+
+	print 'top tn'
+	print top_tn
+
+	assert top_tn.min() <= result <= top_tn.max() # result has position between column tops
+
+	assert tiegcm.rootgrp.variables['TN'].min() <= result <= tiegcm.rootgrp.variables['TN'].max() #result in bounds of available data
+
+
+
 		
 

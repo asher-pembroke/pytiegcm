@@ -1,7 +1,7 @@
 import numpy as np
 from collections import namedtuple, defaultdict
 import pandas as pd
-
+import numpy.ma as ma
 
 R_e = 6.371008e8 #cm
 
@@ -135,18 +135,29 @@ def copy_longitude(a):
 		result = np.insert(result, result.shape[1], north, axis = 1)
 	return result
 
-def average_longitude(a): 
+def fill_masked(a):
+	if a[:,-1,:,:].mask.all():
+		a[:,-1,:,:] = a[:,-2,:,:].data
+	return a.filled()
+
+def average_longitude(a, verbose = False): 
 	"""Averages longitude values, returning size nlat+2,
 	assumes longitude is last index"""
 	if len(a.shape) == 4: #4d variable
 		ntime, nilev, nlat, nlon = a.shape
 		south_avg = np.mean(a[:,:,0,:].T, axis = 0).T
 		south_avg = south_avg.repeat(nlon, axis = 1).reshape((ntime, nilev, nlon))
+		if verbose:
+			print 'south min, max', south_avg.min(), south_avg.max()
 
 		north_avg = np.mean(a[:,:,-1,:].T, axis = 0).T
 		north_avg = north_avg.repeat(nlon, axis = 1).reshape((ntime, nilev, nlon))
+		if verbose:
+			print 'north min, max', north_avg.min(), north_avg.max()
 
 		result = np.insert(a, 0, south_avg, axis = 2)
+		if verbose:
+			print 'after south insert, min, max', result.min(), result.max()
 		result = np.insert(result, result.shape[2], north_avg, axis = 2)
 	else: #3d variable
 		ntime, nlat, nlon = a.shape
