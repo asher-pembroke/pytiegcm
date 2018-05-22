@@ -110,7 +110,7 @@ class TIEGCM(object):
 		self.wrap_variable('Z')
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
 		self.high_altitude_trees = dict()
-		self.fill_value = 1.0
+		self.fill_value = np.nan
 
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
@@ -339,7 +339,11 @@ class TIEGCM(object):
 		column_slicer = self.get_column_slicer_4D(Point4D(time, *point))
 		slice_key = self.get_slice_key_4D(column_slicer, variable_name)
 		p = point[0]/self.z_scale, point[1], to_range(point[2], self.longitude_min, self.longitude_max)
-		return self.time_interpolators[slice_key](p, time)
+		result = self.time_interpolators[slice_key](p, time)
+		if np.isnan(result):
+			return self.time_interpolate_high_altitude(point, variable_name, time)
+		else:
+			return result
 
 	def time_interpolate_2D(self, point, variable_name, time):
 		time_slicer = self.get_slicer_1D(Point2DT(time, *point))
@@ -367,13 +371,6 @@ class TIEGCM(object):
 
 		coord_indices = self.get_coordinate_indices(vertices, self.z[time_index, -1, :, :].shape)
 		lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
-		# print 'interpolate_high_altitude:', \
-		# 	variable_name, \
-		# 	self.rootgrp.variables[variable_name].shape, \
-		# 	self.rootgrp.variables[variable_name].min(), \
-		# 	self.rootgrp.variables[variable_name].max(),\
-		# 	lat_indices, lon_indices
-
 
 		try:
 			variable = self.rootgrp.variables[variable_name][time_index, -1, lat_indices, lon_indices].ravel()
@@ -724,23 +721,35 @@ def test_time_interpolate_high_altitude_temperature():
 	tn_layers = np.stack((variables0, variables1))
 	assert tn_layers.min() <= result <= tn_layers.max() # result is between interpolating triangles
 
-	print 'tn_layers:'
-	print tn_layers
-
 	## interpolation causes the masked values to get filled
 	top_z = z_column[:,-1,:,:]
 	variable = np.array(tiegcm.rootgrp['TN'])[column_slicer]
 	top_tn = variable[:,-1,:,:]
-
-
-	print 'top tn'
-	print top_tn
 
 	assert top_tn.min() <= result <= top_tn.max() # result has position between column tops
 
 	assert tiegcm.rootgrp.variables['TN'].min() <= result <= tiegcm.rootgrp.variables['TN'].max() #result in bounds of available data
 
 
+def test_interpolator_high_altitude_matches():
+	## This should replicate the delaunay test above
+	tiegcm = TIEGCM(test_file)
 
-		
+	z_max = tiegcm.z.max()
+	z_test = 1.1*z_max
+
+	point = Point3D(z_test, -20.5, .5)
+
+	variable_name = 'TN'
+	time = 3.5
+	result = tiegcm.time_interpolate(point, variable_name, time)
+	result2 = tiegcm.time_interpolate_high_altitude(point, variable_name, time)
+	
+	assert np.isclose(result, result2)	
+
+
+def test_high_altitude_masked_layer():
+	"""Highest layer for TN is masked. Need to make sure interpolation only returns results from the next highest layer"""
+	assert False
+
 
