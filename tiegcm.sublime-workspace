@@ -1,0 +1,1315 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"set_",
+				"set_variable_bc〔function〕"
+			],
+			[
+				"var",
+				"variables"
+			],
+			[
+				"Point",
+				"Point3D"
+			],
+			[
+				"Poin",
+				"Point3D〔variable〕"
+			],
+			[
+				"embed",
+				"embedding"
+			],
+			[
+				"variabl",
+				"variable_name〔variable〕"
+			],
+			[
+				"tiegcm",
+				"tiegcm_instance"
+			],
+			[
+				"TIEGCM",
+				"TIEGCM_cpp"
+			],
+			[
+				"z",
+				"z_min〔variable〕"
+			],
+			[
+				"longitu",
+				"longitude_min〔variable〕"
+			],
+			[
+				"lon",
+				"longitude_min〔variable〕"
+			],
+			[
+				"longti",
+				"longitude_max〔variable〕"
+			],
+			[
+				"lat",
+				"latitude"
+			],
+			[
+				"poin",
+				"points2DT〔variable〕"
+			],
+			[
+				"column",
+				"column_slicer〔variable〕"
+			],
+			[
+				"Colu",
+				"ColumnSlice4D〔variable〕"
+			],
+			[
+				"variable",
+				"variable_name"
+			],
+			[
+				"time",
+				"time_index"
+			],
+			[
+				"run",
+				"run_id"
+			],
+			[
+				"mem",
+				"memoize"
+			],
+			[
+				"direc",
+				"directory_map"
+			],
+			[
+				"field",
+				"field_analyser"
+			],
+			[
+				"defa",
+				"default_limits"
+			],
+			[
+				"show",
+				"showlegend"
+			],
+			[
+				"default",
+				"default_scalar_ranges〔variable〕"
+			],
+			[
+				"curre",
+				"current_scalar"
+			],
+			[
+				"scalar",
+				"scalar_name"
+			],
+			[
+				"load",
+				"load_state"
+			],
+			[
+				"scal",
+				"scalar_range"
+			],
+			[
+				"defau",
+				"default"
+			],
+			[
+				"limits",
+				"limits_dict"
+			],
+			[
+				"domain",
+				"domain_edit"
+			],
+			[
+				"scala",
+				"scalar_name"
+			],
+			[
+				"defaul",
+				"default_scalar_ranges〔variable〕"
+			],
+			[
+				"def",
+				"default_scalar_ranges〔variable〕"
+			],
+			[
+				"curr",
+				"current_zlim〔argument〕"
+			],
+			[
+				"current",
+				"current_xlim〔argument〕"
+			],
+			[
+				"current_limits",
+				"current_limits_dict〔variable〕"
+			],
+			[
+				"curren",
+				"current_limits"
+			],
+			[
+				"previous",
+				"previous_names"
+			],
+			[
+				"plot",
+				"plot_points〔function〕"
+			],
+			[
+				"redu",
+				"reduce_curve〔function〕"
+			],
+			[
+				"Fie",
+				"FieldAnalyser〔class〕"
+			],
+			[
+				"selec",
+				"selectedData〔argument〕"
+			],
+			[
+				"previou",
+				"previous_dict〔variable〕"
+			],
+			[
+				"sele",
+				"selectedData〔argument〕"
+			],
+			[
+				"clickData",
+				"clickData_group〔argument〕"
+			],
+			[
+				"sc",
+				"scalar_range"
+			],
+			[
+				"click",
+				"clickData"
+			],
+			[
+				"vector",
+				"vector_name"
+			],
+			[
+				"main",
+				"main_graph"
+			],
+			[
+				"max",
+				"max_rows"
+			],
+			[
+				"class",
+				"className"
+			],
+			[
+				"generat",
+				"generate_slider〔function〕"
+			],
+			[
+				"gener",
+				"generate_slider〔function〕"
+			],
+			[
+				"transition",
+				"transition_frame"
+			],
+			[
+				"emp",
+				"empty_frame"
+			],
+			[
+				"file",
+				"filename〔argument〕"
+			],
+			[
+				"strea",
+				"streakline_groups"
+			],
+			[
+				"add",
+				"add_argument〔function〕"
+			],
+			[
+				"aut",
+				"auto_open"
+			],
+			[
+				"fil",
+				"file_frame"
+			],
+			[
+				"inpu",
+				"input_file"
+			],
+			[
+				"streak",
+				"streakline_transitions〔function〕"
+			],
+			[
+				"to",
+				"tolist"
+			],
+			[
+				"arc",
+				"arc_length〔argument〕"
+			],
+			[
+				"arc_",
+				"arc_length〔function〕"
+			],
+			[
+				"retur",
+				"return_arc_length"
+			],
+			[
+				"return",
+				"return_index〔argument〕"
+			],
+			[
+				"min_",
+				"min_arc_length"
+			],
+			[
+				"inner",
+				"inner_type〔variable〕"
+			],
+			[
+				"inn",
+				"inner_type"
+			],
+			[
+				"prelim",
+				"preliminary〔variable〕"
+			],
+			[
+				"test__call__handles_multi_Data",
+				"test__call__handles_multi_DataFrame_derived"
+			],
+			[
+				"test__call__handles_multi_Dat",
+				"test__call__handles_multi_DataFrame_derived"
+			],
+			[
+				"getPos",
+				"getPositions"
+			],
+			[
+				"kameleon",
+				"kameleon_trace"
+			],
+			[
+				"comp",
+				"component3"
+			],
+			[
+				"compo",
+				"component2"
+			],
+			[
+				"derive",
+				"derived_results〔variable〕"
+			],
+			[
+				"deriv",
+				"derivedtuple〔variable〕"
+			],
+			[
+				"inte",
+				"interp_fn〔function〕"
+			],
+			[
+				"Time",
+				"Timestamp"
+			],
+			[
+				"Field",
+				"FieldManager〔class〕"
+			],
+			[
+				"Typ",
+				"TypeError〔class〕"
+			],
+			[
+				"f",
+				"fieldnames〔variable〕"
+			],
+			[
+				"named",
+				"namedtuple〔module〕"
+			],
+			[
+				"Not",
+				"NotImplementedError〔class〕"
+			],
+			[
+				"gen",
+				"generator"
+			],
+			[
+				"has",
+				"hasattr〔function〕"
+			],
+			[
+				"Ty",
+				"TypeError〔class〕"
+			],
+			[
+				"result",
+				"result_from_series〔variable〕"
+			],
+			[
+				"fi",
+				"file_frame〔variable〕"
+			],
+			[
+				"legend",
+				"legendgroup"
+			],
+			[
+				"max_",
+				"max_iterations"
+			],
+			[
+				"rais",
+				"raise_errors〔argument〕"
+			],
+			[
+				"timi",
+				"timeit"
+			],
+			[
+				"clos",
+				"closed_arc_length〔argument〕"
+			],
+			[
+				"initia",
+				"initial_forward〔argument〕"
+			],
+			[
+				"last",
+				"last_inbound_point"
+			],
+			[
+				"interva",
+				"interval_sign〔variable〕"
+			],
+			[
+				"open",
+				"open_arc_length"
+			],
+			[
+				"closed_",
+				"closed_arc_length"
+			],
+			[
+				"topology",
+				"topology_funcs"
+			],
+			[
+				"As",
+				"AttributeError〔class〕"
+			],
+			[
+				"A",
+				"ArithmeticError〔class〕"
+			],
+			[
+				"transi",
+				"transitions〔variable〕"
+			],
+			[
+				"get",
+				"get_timesteps〔function〕"
+			],
+			[
+				"push",
+				"push_interval〔function〕"
+			],
+			[
+				"out",
+				"out_of_bounds〔variable〕"
+			],
+			[
+				"read",
+				"read_from_buffer〔function〕"
+			],
+			[
+				"nei",
+				"neighborhood_length"
+			],
+			[
+				"perio",
+				"periodicity"
+			],
+			[
+				"geo",
+				"geometry_id"
+			],
+			[
+				"per",
+				"periodicity〔variable〕"
+			],
+			[
+				"buffe",
+				"buffer_string〔variable〕"
+			],
+			[
+				"file_",
+				"file_offset"
+			],
+			[
+				"ne",
+				"neighborhood_length〔variable〕"
+			],
+			[
+				"bu",
+				"buffer_string〔variable〕"
+			],
+			[
+				"buffer",
+				"buffer_string"
+			],
+			[
+				"from",
+				"frombuffer"
+			],
+			[
+				"item",
+				"itemsize"
+			],
+			[
+				"endi",
+				"endianness〔variable〕"
+			],
+			[
+				"endian",
+				"endianness"
+			],
+			[
+				"uin",
+				"uint64"
+			],
+			[
+				"globa",
+				"global_attributes〔variable〕"
+			],
+			[
+				"outpu",
+				"output_file"
+			],
+			[
+				"outp",
+				"output_file"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "CMakeLists.txt",
+			"settings":
+			{
+				"buffer_size": 1194,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "test_bind.py",
+			"settings":
+			{
+				"buffer_size": 1456,
+				"line_ending": "Unix",
+				"name": "test_bind.py"
+			}
+		},
+		{
+			"file": "tiegcm.py",
+			"settings":
+			{
+				"buffer_size": 19075,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "util.py",
+			"settings":
+			{
+				"buffer_size": 6143,
+				"line_ending": "Unix",
+				"name": "util.py"
+			}
+		},
+		{
+			"file": "/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/tiegcm-test.sublime-build",
+			"settings":
+			{
+				"buffer_size": 385,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/apembrok/Work/gmat/README.md",
+			"settings":
+			{
+				"buffer_size": 2065,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/User/tiegcm-test.sublime-build",
+	"command_palette":
+	{
+		"height": 127.0,
+		"selected_items":
+		[
+			[
+				"Package Control:in",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: ",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: ins",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control:",
+				"Package Control: Install Package"
+			],
+			[
+				"",
+				"Google Spell Check"
+			],
+			[
+				"Snippet: poly",
+				"Snippet: polymer element"
+			],
+			[
+				"Package Control: 	",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: inst	",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: install",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: insta",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: insta	",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: install Package",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 458.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": true,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/apembrok/Work/TIEGCM/ccmc_interpolator.cpp",
+		"/Users/apembrok/Work/TIEGCM/kameleon.hpp",
+		"/Users/apembrok/Work/TIEGCM/tiegcm.py",
+		"/Users/apembrok/Work/gmat/GMAT_KAME/GmatDevelopment/plugins/CMakeLists.txt",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/embedding.cpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/__init__.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/bindings.cpp",
+		"/Users/apembrok/Work/TIEGCM/example.cpp",
+		"/Users/apembrok/Work/gmat/GMAT_KAME/GmatDevelopment/prototype/TAT-C/cpp/GMATsrc/util/TimeTypes.cpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/setup.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/tests/test_cpp.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/CMakeLists.txt",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/tests/math_test.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/tests/test_embedding.cpp",
+		"/Users/apembrok/Work/gmat/GMAT_KAME/GmatDevelopment/plugins/EstimationPlugin/src/base/adapter/RangeAdapterKm.cpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/hello.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/tests/test_class.cpp",
+		"/Users/apembrok/Work/pybind11/README.md",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/main_embedding.cpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/include/simple.hpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/simple.cpp",
+		"/Users/apembrok/Downloads/sample_format.json",
+		"/Users/apembrok/Work/gmat/GMAT_KAME/GmatDevelopment/CMakeLists.txt",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/include/math.hpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/include/embedding.hpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/build/lib.macosx-10.7-x86_64-2.7/python_cpp_example/hello.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/simple.hpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/main.cpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/class.hpp",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/src/python_cpp_example/tiegcm.py",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/setup.cfg",
+		"/Users/apembrok/Work/pybind11/python_cpp_example/include/class.hpp",
+		"/Users/apembrok/Work/TIEGCM/CMakeLists.txt",
+		"/Users/apembrok/Work/TIEGCM/main.cpp",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/tiegcm-test.sublime-build",
+		"/Users/apembrok/Work/TIEGCM/tests/Makefile",
+		"/Users/apembrok/Work/TIEGCM/build/Makefile",
+		"/Users/apembrok/Work/TIEGCM/TIEGCM.py",
+		"/Users/apembrok/Work/TIEGCM/kameleon.cpp",
+		"/Users/apembrok/Work/gmat/GMAT_KAME/gmatinternal/code/DTMPlugin/src/base/CMakeLists.txt",
+		"/Users/apembrok/Work/TIEGCM/somecode.cpp",
+		"/Users/apembrok/Work/TIEGCM/ccmc.cpp",
+		"/Users/apembrok/git/visualization/test_application.py",
+		"/Users/apembrok/git/visualization/test_field_analyser.py",
+		"/Users/apembrok/git/visualization/farthest_point.py",
+		"/Users/apembrok/git/amps_visualizer/README.md",
+		"/Users/apembrok/git/amps_visualizer/AMPs_visualizer.py",
+		"/Users/apembrok/git/visualization/README.md",
+		"/Users/apembrok/git/visualization/field_analyser.py",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/klive-visualization-test.sublime-build",
+		"/Users/apembrok/Work/Valeriy/earth_vis.py",
+		"/Users/apembrok/git/visualization/visualization.sublime-project",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/python-grid.sublime-build",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/trunk/kameleon-converter-working1/Makefile",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/trunk/kameleon-converter-working1/c_src/read_batsrus_spherical.c",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/README.md",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/conda_env.md",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/FileReader.h",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/ENLILInterpolator.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/KameleonInterpolator.cpp",
+		"/Users/apembrok/Work/Kameleon_Sample_Data/PFSS/jul_12_2012-gong2125_027/fieldline_footpoint.in",
+		"/Users/apembrok/Downloads/gz_list.2",
+		"/Users/apembrok/Downloads/gz_list",
+		"/Users/apembrok/Work/Linkoping/2017/fieldlines.py",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/example/python/grid.py",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/Kameleon.cpp",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/klive_explorer.sublime-workspace",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/example/python/ARMS_test.py",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/pyreaders/ARMS.py",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/pyreaders/ARMS.ini",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/wrappers/c/Kameleon_c.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/Point3f.cpp",
+		"/Users/apembrok/Work/kameleon-standard/ASDF_Tutorial/time/test_time.asdf",
+		"/Users/apembrok/miniconda2/envs/asdf/lib/python2.7/site-packages/asdf/schema.py",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/lib/ccmc/pyreaders/test/Valid_Kameleon_File.asdf",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/pyreaders/read_asdf.py",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/PythonInterpolator.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/PythonModel.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/Kameleon_open.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/GeneralFileReader.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/PythonModel.h",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/Shue.cpp",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/build/CMakeCache.txt",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/docs/source/CoordinateTransformations.rst",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/docs/source/Developers.rst",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/CMakeLists.txt",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/read_asdf.sublime-build",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/asdf_converter.sublime-build",
+		"/Users/apembrok/git/ccmc/converters/PAMHD/PAMHD_to_ASDF.py",
+		"/Users/apembrok/Work/Separatrix/topology_3d.py",
+		"/Users/apembrok/git/ccmc/converters/PAMHD/Valid_PAMHD.asdf",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/docs/source/_templates/layout.html",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/docs/source/Quick_start.rst",
+		"/Users/apembrok/git/ccmc/converters/PAMHD/PAMHD.py",
+		"/Users/apembrok/Work/RoR_Sample_Data/PAMHD/ilja_honkonen_20160406_LP_2/mhd_9.504e-01_s.dc.asdf",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/bin/ccmc/examples/python/ionosphere_test.py",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/bin/ccmc/examples/python/tracer.py",
+		"/Users/apembrok/Work/kameleon-standard/Valid_Kameleon_File.asdf",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/ionosphere.sublime-build",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/lib/ccmc/pyreaders/Valid_Kameleon_File.asdf",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/pyreaders/testReader.py",
+		"/Users/apembrok/miniconda2/envs/asdf/lib/python2.7/site-packages/asdf/tags/core/table.py",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/lib/python2.7/site-packages/scipy/interpolate/interpolate.py",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/pyreaders/kameleon-dev.sublime-project",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/lib/ccmc/pyreaders/read_asdf.py",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/Default/Preferences.sublime-settings",
+		"/Users/apembrok/miniconda2/envs/kameleon_build/lib/ccmc/pyreaders/attributeError_Invalid_Kameleon_File.asdf",
+		"/tmp/sample_data.asdf",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/wrappers/python/CMakeLists.txt",
+		"/Users/apembrok/git/ccmc/conda-recipes/constructors/kameleon/osx/construct.yaml",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/NEWS",
+		"/Users/apembrok/Work/IGRF/igrf11coeffs.txt",
+		"/Users/apembrok/git/ccmc/conda-recipes/igrf-diff",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/trunk/kameleon-converter-working1/inc/read_batsrus_spherical.h",
+		"/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/python-kameleon_build.sublime-build",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/trunk/kameleon-converter-working1/c_src/read_batsrus.c",
+		"/Users/apembrok/miniconda2/envs/kameleon-plotly/bin/ccmc/examples/python/grid.py",
+		"/Users/apembrok/Work/Saturn/wolf5_code/read_batsrus.c_20120423_git_read_batsrus.c",
+		"/Users/apembrok/Work/Saturn/wolf5_code/diff1.diff",
+		"/Users/apembrok/Work/Saturn/wolf5_code/Makefile",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/tags/kameleon-converter-v5.2.0/c_src/main_read_driver.c",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/tags/kameleon-converter-v5.2.0/inc/ccmc_registered_models.h",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon_converter/tags/kameleon-converter-v5.2.0/c_src/read_batsrus.c",
+		"/Users/apembrok/git/ccmc/conda-recipes/kameleon/meta.yaml",
+		"/Users/apembrok/git/ccmc/ccmc-software/kameleon-plus/trunk/kameleon-plus-working/src/ccmc/pyreaders/generated/pyKameleon.cpp",
+		"/tmp/kameleon_module_test_plotly.txt",
+		"/tmp/kameleon_module_test.txt",
+		"/tmp/kameleon_prog.txt"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			"CMakeLists.txt, *.py, *.cpp",
+			"CMakeLists.txt, *.py",
+			"CMakeLists.txt",
+			"*.py",
+			"*.cpp, *.py, *.hpp",
+			"*.cpp, *.py",
+			"*.*",
+			"*.cpp",
+			"*.*",
+			"*.cpp",
+			"*.*",
+			"*.py",
+			"*.*",
+			"*.cpp",
+			"*.*",
+			"CMakeLists.txt",
+			"*.rst",
+			"*.*",
+			"*.rst",
+			"CMake*",
+			"*.h, *.cpp, *.py",
+			"*.h, *.cpp",
+			"CMake*",
+			"*.sublime-build",
+			"*.cpp",
+			"*.h",
+			"*",
+			"*.*",
+			"*.c",
+			"*",
+			"read_batsrus.c",
+			"*.c",
+			"*.yaml",
+			"*.cpp, *.h, *.py, *.*",
+			"*.cpp, *.h, *.py",
+			"*.*",
+			"*.h",
+			"*.cpp",
+			"*.py",
+			"CMakeLists.txt",
+			"*.cpp",
+			"CMakeLists.txt",
+			"*.py",
+			"CMakeLists.txt",
+			"*.*",
+			"*.py",
+			"*.*",
+			"*.py",
+			"*.c",
+			"*.py",
+			"CMakeLists.txt",
+			"*.rst",
+			"CMakeLists.txt",
+			"*.py, *.cpp",
+			"*.py",
+			"*.cpp",
+			"CMakeLists.txt",
+			"*.*",
+			"*.sh, *.yaml",
+			"*.sh",
+			"*.yaml",
+			"*.sh",
+			"*.yaml",
+			"*.sh, *.yaml",
+			"*.sh, *.yml",
+			"*.sh",
+			"CMake*.txt",
+			"CMake*",
+			"*",
+			"cxform*",
+			"*.h",
+			"*.*",
+			"*ENLIL*",
+			"*.cpp",
+			"*cx*.*",
+			"*.*",
+			" *.*",
+			" *.c, *.cpp",
+			" *.c,",
+			"*.h, *.cpp, *.c, *.py, *.cxx",
+			"*.h, *.cpp, *.c, *.py",
+			"*.h, *.cpp, *.c",
+			"*.h, *.cpp",
+			"*.h",
+			"*.h\n*.h",
+			"*.h\n*.*",
+			"*.h\n*.h, *.c, *.cpp",
+			"*.h\n*.h",
+			"*.py",
+			"*",
+			"*.py",
+			"*.cpp",
+			"CMakeLists.txt",
+			"*.py",
+			"CMakeLists.txt",
+			"*.cpp, *.py",
+			"*.cpp",
+			"*.*",
+			"*.rst, CMakeLists.txt",
+			"CMakeLists.txt",
+			"*.cpp, CMakeLists.txt",
+			"*.cpp",
+			"*.*",
+			"*.h, *.cpp, *.md, *.rst, CMakeLists.txt",
+			"*.h, *.cpp, *.md, *.rst",
+			"*.h, *.cpp, *.md",
+			"*.h, *.cpp",
+			"*.h,",
+			"*.h, *.cpp, *.py",
+			"*.h, *.cpp",
+			"*.h",
+			" *.py, CMake*, *.cpp",
+			" *.py, CMake*",
+			"*.h, *.cpp, *.py, CMake*",
+			"*.h, *.cpp, *.py",
+			"*.h",
+			"*.h, *.py, *.cpp",
+			"*.h, *.py",
+			"*.h",
+			"*.h, *.py, *.cpp",
+			"*.h, *.py, kame*.cpp",
+			"*.h, *.py, *.cpp",
+			"*.h, *.py",
+			"*.h",
+			"*.cpp",
+			"CMakeLists.txt",
+			"*.h,*.cpp, *.py",
+			"*.h,*.cpp"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"LinearNDInterpolator",
+			"set_3d_boundary_conditions",
+			"lat",
+			"latitude",
+			"wrap_variable",
+			"set_variable_boundary_condition",
+			"set_variable_bc",
+			"wrap_variable",
+			"k",
+			"set_variable_bc",
+			"wrap_variables",
+			"wrap_variable",
+			"set_variable_bc",
+			"wrap_variable",
+			"set_points2d",
+			"87.",
+			"cartesia",
+			"cartesian",
+			"get_3D_interpolator_cartesian",
+			"get_delaunay_3D_cartesian",
+			"self.z",
+			"get_delaunay_3D_cartesian",
+			"test_file",
+			"get_delaunay_3D_cartesian",
+			"get_3D_column",
+			":,0",
+			"get_3D_column",
+			"get_delaunay_3D_cartesian",
+			"get_3D_interpolator_cartesian",
+			"get_delaunay_3D_cartesian",
+			"cartesian",
+			"time_interpolators",
+			"create_3Dtime_interpolator",
+			"TimeInterpolator",
+			"get_3D_interpolator_cartesian",
+			"time_interpolators",
+			"get_3D_interpolator_cartesian",
+			"create_3dtime_int",
+			"get_3D_interpolator",
+			"create_3Dtime_interpolator",
+			"self.time_inter",
+			"time_interpolators",
+			"get_3D_interpolator",
+			"get_3D_interpolator_cartesian",
+			"TimeInterpolator",
+			"verbose = ",
+			"time_interpolate",
+			"TimeInterpolator",
+			"self.verbose",
+			"if self.verbos",
+			"verbose",
+			"get_3D_interpolator",
+			"create_3Dtime_interpolator",
+			"set_inter",
+			"self.interpol",
+			"time_interpolators",
+			"create_3Dtime_interpolator",
+			"get_3D_interpolator",
+			"create_inter",
+			"self.interpolators",
+			"create_interpolator",
+			"get_3D_interpolator",
+			"create_interpolator",
+			"get_3D_interpolator",
+			"get_delaunay_3D_cartesian",
+			"R_e",
+			"r_e",
+			"get_delaunay_3D",
+			"get_3d_in",
+			"create_3d",
+			"interpolate_4D_point",
+			"get_delaunay_3D",
+			"get_3D_interpolator",
+			"create_3Dtime_interpolator",
+			"keydefaultdict",
+			"get_3D_interpolator",
+			"create_3d",
+			"get_3D_interpolator",
+			"time_interpolate_2D",
+			"get_column_slicer_4D",
+			"time_interpolate",
+			"get_delaunay_3D",
+			"set_interpolators",
+			"keydefaultdict",
+			"self.interpolators",
+			"interpolators",
+			"create_interpolator",
+			"get_3D_interpolator",
+			"create_interpolator",
+			"get_3D_interpolator",
+			"get_slice_key_3D",
+			"get_column_slice_3D",
+			"get_slice_key_3D",
+			"Slice_key4D",
+			"setupplugin",
+			"python",
+			"python_version",
+			"pythoninterp",
+			"cmake",
+			"cmake_args",
+			"CMakeBuild",
+			"gmattimeconstants",
+			"timeTypes",
+			"say_hello",
+			"math_test",
+			"math_teest",
+			"python_cpp_example_test",
+			"embedding_main",
+			"python_cpp_example",
+			"std",
+			"MACOSX_RPATH",
+			"#include",
+			"say_hello",
+			"tiegcm",
+			"pytest",
+			"pybind11_tests",
+			"CMakeExtension",
+			"stl",
+			"TIEGCM",
+			"tiegcm",
+			"TIEGCM",
+			"tiegcm",
+			"TIEGCM",
+			"var",
+			"model_name",
+			"kameleon",
+			"tiegcm",
+			"main"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"",
+			"r1fUoHwJOWCuK3WBAAySjmKYqsG6G2TYIxdqY6YNuuG\nr1fUoHwJOWCuK3WBAAySjmKYqsG6G2TYIxdqY6YNuuG"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 5,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "CMakeLists.txt",
+					"settings":
+					{
+						"buffer_size": 1194,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								358,
+								358
+							]
+						],
+						"settings":
+						{
+							"glslvalidator_configured": true,
+							"glslvalidator_enabled": 1.0,
+							"syntax": "Packages/CMake/CMake.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "test_bind.py",
+					"settings":
+					{
+						"buffer_size": 1456,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								244,
+								244
+							]
+						],
+						"settings":
+						{
+							"auto_complete": false,
+							"auto_name": "test_bind.py",
+							"glslvalidator_configured": true,
+							"glslvalidator_enabled": 1.0,
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "tiegcm.py",
+					"settings":
+					{
+						"buffer_size": 19075,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								17270,
+								17270
+							]
+						],
+						"settings":
+						{
+							"auto_complete": false,
+							"glslvalidator_configured": true,
+							"glslvalidator_enabled": 1.0,
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 6603.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "util.py",
+					"settings":
+					{
+						"buffer_size": 6143,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2162,
+								2162
+							]
+						],
+						"settings":
+						{
+							"auto_complete": false,
+							"auto_name": "util.py",
+							"glslvalidator_configured": true,
+							"glslvalidator_enabled": 1.0,
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 486.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/Users/apembrok/Library/Application Support/Sublime Text 2/Packages/User/tiegcm-test.sublime-build",
+					"settings":
+					{
+						"buffer_size": 385,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								385,
+								385
+							]
+						],
+						"settings":
+						{
+							"glslvalidator_configured": true,
+							"glslvalidator_enabled": 1.0,
+							"syntax": "Packages/JavaScript/JSON.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "/Users/apembrok/Work/gmat/README.md",
+					"settings":
+					{
+						"buffer_size": 2065,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								461,
+								461
+							]
+						],
+						"settings":
+						{
+							"auto_complete": false,
+							"glslvalidator_configured": true,
+							"glslvalidator_enabled": 1.0,
+							"syntax": "Packages/Markdown/Markdown.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 31.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 286.0
+	},
+	"output.git":
+	{
+		"height": 236.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": false,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 201.0,
+	"status_bar_visible": true
+}
