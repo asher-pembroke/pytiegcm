@@ -111,6 +111,7 @@ class TIEGCM(object):
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
 		self.high_altitude_trees = dict()
 		self.fill_value = np.nan
+		self.density = 1.0e-12 # test density
 
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
@@ -744,6 +745,7 @@ def test_interpolator_high_altitude_matches():
 	time = 3.5
 	result = tiegcm.time_interpolate(point, variable_name, time)
 	result2 = tiegcm.time_interpolate_high_altitude(point, variable_name, time)
+	print result, result2
 	
 	assert np.isclose(result, result2)	
 
