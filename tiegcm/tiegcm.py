@@ -82,6 +82,7 @@ class TimeInterpolator2D(object):
 
 class TIEGCM(object):
 	def __init__(self, filename):
+		print 'initializing tiegcm'
 		self.rootgrp = Dataset(filename, 'r')
 		self.lat = np.concatenate(([-90], np.array(self.rootgrp.variables['lat']), [90]))
 		self.lon = np.array(self.rootgrp.variables['lon'])
