@@ -82,7 +82,7 @@ class TimeInterpolator2D(object):
 
 class TIEGCM(object):
 	def __init__(self, filename):
-		print 'initializing tiegcm'
+		# print 'initializing tiegcm'
 		self.rootgrp = Dataset(filename, 'r')
 		self.lat = np.concatenate(([-90], np.array(self.rootgrp.variables['lat']), [90]))
 		self.lon = np.array(self.rootgrp.variables['lon'])
@@ -112,7 +112,6 @@ class TIEGCM(object):
 		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
 		self.high_altitude_trees = dict()
 		self.fill_value = np.nan
-		self.density = 1.0e-12 # test density
 
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
@@ -400,6 +399,9 @@ class TIEGCM(object):
 			r1, variables1, lat_indices1, lon_indices1 = self.interpolate_high_altitude(p, variable_name, t1, return_variables)
 
 		return np.interp(time, [t0, t1], [r0, r1]), (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1)
+
+	def density(self, xlat, xlon, xalt, time):
+		return self.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)
 
 z_test = 39005780. # a mid range test height in cm 
 
@@ -742,7 +744,7 @@ def test_interpolator_high_altitude_matches():
 
 	point = Point3D(z_test, -20.5, .5)
 
-	variable_name = 'TN'
+	variable_name = 'DEN'
 	time = 3.5
 	result = tiegcm.time_interpolate(point, variable_name, time)
 	result2 = tiegcm.time_interpolate_high_altitude(point, variable_name, time)
@@ -751,8 +753,22 @@ def test_interpolator_high_altitude_matches():
 	assert np.isclose(result, result2)	
 
 
+
+def test_density_function():
+	tiegcm = TIEGCM(test_file)
+	xlat = -8.81183
+	xlon = 161.96608
+	xalt = 361.10342*1e5 #cm
+	time = 3.5 #ut hours
+	result = tiegcm.density(xlat, xlon, xalt, time)*1e3
+	result2 = tiegcm.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)*1e3
+	print "{} ~ {} [kg/m^3]".format(result, result2)
+
+	assert np.isclose(result, result2)
+
 def test_high_altitude_masked_layer():
 	"""Highest layer for TN is masked. Need to make sure interpolation only returns results from the next highest layer"""
 	assert False
 
-
+def test_mjd_time():
+	assert False
