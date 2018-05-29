@@ -81,7 +81,7 @@ class TimeInterpolator2D(object):
 
 
 class TIEGCM(object):
-	def __init__(self, filename):
+	def __init__(self, filename, outermost_layer = -1):
 		# print 'initializing tiegcm'
 		self.rootgrp = Dataset(filename, 'r')
 		self.lat = np.concatenate(([-90], np.array(self.rootgrp.variables['lat']), [90]))
@@ -90,9 +90,11 @@ class TIEGCM(object):
 		self.boundary_set = []
 		self.wrapped = []
 
+		self.set_outermost_layer(outermost_layer)
+
 		self.wrap_longitude()
 
-		self.ilev = np.array(self.rootgrp.variables['ilev'])
+		self.ilev = np.array(self.rootgrp.variables['ilev'])[:self.outermost_layer]
 
 		self.ilev_, self.lat_, self.lon_ = scipy.meshgrid(self.ilev, self.lat, self.lon, indexing = 'ij')
 
@@ -109,9 +111,15 @@ class TIEGCM(object):
 
 		self.set_variable_boundary_condition('Z') #prior to wrapping to avoid double counting
 		self.wrap_variable('Z')
-		self.z = np.array(self.rootgrp.variables['Z']) # Z is "geopotential height" -- use geometric height ZG?
+		self.z = np.array(self.rootgrp.variables['Z'])[:,:self.outermost_layer,:,:] # Z is "geopotential height" -- use geometric height ZG?
 		self.high_altitude_trees = dict()
 		self.fill_value = np.nan
+
+	def set_outermost_layer(self, layer = None):
+		if layer is None:
+			self.outermost_layer = len(self.rootgrp.variables['ilev'])
+		else:
+			self.outermost_layer = layer
 
 	def get_variable_unit(self, variable_name):
 		return self.rootgrp.variables[variable_name].units
@@ -265,7 +273,7 @@ class TIEGCM(object):
 			raise
 		self.set_variable_boundary_condition(slice_key.variable)
 		self.wrap_variable(slice_key.variable)
-		variable = np.array(self.rootgrp[slice_key.variable])[column_slice][time_index].ravel()
+		variable = np.array(self.rootgrp[slice_key.variable])[:,:self.outermost_layer,:,:][column_slice][time_index].ravel()
 
 		try:
 			return LinearNDInterpolator(delaunay, variable, fill_value = self.fill_value)
@@ -374,7 +382,7 @@ class TIEGCM(object):
 		lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
 
 		try:
-			variable = self.rootgrp.variables[variable_name][time_index, -1, lat_indices, lon_indices].ravel()
+			variable = self.rootgrp.variables[variable_name][:,:self.outermost_layer,:,:][time_index, -1, lat_indices, lon_indices].ravel()
 			lnd = LinearNDInterpolator(tree.data[vertices][:,1:], variable)
 		except:
 			print 'problem in interpolate high altitude:'
@@ -586,7 +594,7 @@ def test_time_interpolate_pole():
 def test_high_altitude_triangle():
 	"""Test precision of triangle interpolation: 
 		lat/lon interpolation should match query point"""
-	tiegcm = TIEGCM(test_file)
+	tiegcm = TIEGCM(test_file, outermost_layer = -1)
 
 	time_index = 0
 	z = tiegcm.z[time_index][-1]
@@ -766,9 +774,6 @@ def test_density_function():
 
 	assert np.isclose(result, result2)
 
-def test_high_altitude_masked_layer():
-	"""Highest layer for TN is masked. Need to make sure interpolation only returns results from the next highest layer"""
-	assert False
 
 def test_mjd_time():
 	assert False
