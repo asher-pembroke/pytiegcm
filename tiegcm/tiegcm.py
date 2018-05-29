@@ -17,38 +17,38 @@ from util import boundary_conditions, fill_masked
 import numpy.ma as ma
 
 def geo_to_spherical(point3D, R_e = 6.371008e8):
-    r = point3D.height + R_e
-    theta = np.pi*(90 - point3D.latitude)/180
-    phi = np.pi*(180 + point3D.longitude)/180
-    return Point3DSpherical(r, theta, phi)
+	r = point3D.height + R_e
+	theta = np.pi*(90 - point3D.latitude)/180
+	phi = np.pi*(180 + point3D.longitude)/180
+	return Point3DSpherical(r, theta, phi)
 
 def spherical_to_cartesian(point3D):
-    x = point3D.r*np.sin(point3D.theta)*np.cos(point3D.phi)
-    y = point3D.r*np.sin(point3D.theta)*np.sin(point3D.phi)
-    z = point3D.r*np.cos(point3D.theta)
-    return Point3DCartesian(x, y, z)
+	x = point3D.r*np.sin(point3D.theta)*np.cos(point3D.phi)
+	y = point3D.r*np.sin(point3D.theta)*np.sin(point3D.phi)
+	z = point3D.r*np.cos(point3D.theta)
+	return Point3DCartesian(x, y, z)
 
 def geo_to_cartesian(point3D, R_e = 6.371008e8):
-    return spherical_to_cartesian(geo_to_spherical(point3D, R_e))
+	return spherical_to_cartesian(geo_to_spherical(point3D, R_e))
 
 def index_range(a, v, lr = 'right'):
-    """return indices bounding value in range (a_i, a_i+1] or [a_i, a_i+1)
-    ex: index_range(a,a[i], 'left') == [a[i-1], a[i]]
-    """
-    side = np.searchsorted(a, v, side = lr)
-    return [side - 1, side]
+	"""return indices bounding value in range (a_i, a_i+1] or [a_i, a_i+1)
+	ex: index_range(a,a[i], 'left') == [a[i-1], a[i]]
+	"""
+	side = np.searchsorted(a, v, side = lr)
+	return [side - 1, side]
 
 def to_range(x, start, limit):
 	"""wraps x into range [start, limit]"""
 	return start + (x - start) % (limit - start)
    
 class keydefaultdict(defaultdict):
-    def __missing__(self, key):
-        if self.default_factory is None:
-            raise KeyError( key )
-        else:
-            ret = self[key] = self.default_factory(key)
-            return ret
+	def __missing__(self, key):
+		if self.default_factory is None:
+			raise KeyError( key )
+		else:
+			ret = self[key] = self.default_factory(key)
+			return ret
 
 
 class TimeInterpolator(object):
@@ -125,10 +125,10 @@ class TIEGCM(object):
 		return self.rootgrp.variables[variable_name].units
 
 	def list_2d_variables(self):
-	    return [k for k in self.rootgrp.variables if len(self.rootgrp.variables[k].shape) == 3]
+		return [k for k in self.rootgrp.variables if len(self.rootgrp.variables[k].shape) == 3]
 
 	def list_3d_variables(self):
-	    return [k for k in self.rootgrp.variables if len(self.rootgrp.variables[k].shape) == 4]
+		return [k for k in self.rootgrp.variables if len(self.rootgrp.variables[k].shape) == 4]
 
 	def get_outer_boundary_kdtree(self, time_index):
 		"""Initialize a spatial index for the upper boundary of the model"""
@@ -211,29 +211,29 @@ class TIEGCM(object):
 		self.rootgrp.variables['longitude'] = points.longitude
 
 	def get_column_slicer_4D(self, point):
-	    t_indices = index_range(self.ut, point.time)
-	    t_slice = slice(t_indices[0], t_indices[1]+1)
-	    
-	    lat_indices = index_range(self.lat, point.latitude)
-	    lat_slice = slice(lat_indices[0], lat_indices[1]+1)
+		t_indices = index_range(self.ut, point.time)
+		t_slice = slice(t_indices[0], t_indices[1]+1)
+		
+		lat_indices = index_range(self.lat, point.latitude)
+		lat_slice = slice(lat_indices[0], lat_indices[1]+1)
 
-	    wrapped_lon = to_range(point.longitude, self.longitude_min, self.longitude_max)
-	    lon_indices = index_range(self.lon, wrapped_lon)
-	    lon_slice = slice(lon_indices[0], lon_indices[1]+1)
-	    return ColumnSlice4D(t_slice, slice(None), lat_slice, lon_slice)
+		wrapped_lon = to_range(point.longitude, self.longitude_min, self.longitude_max)
+		lon_indices = index_range(self.lon, wrapped_lon)
+		lon_slice = slice(lon_indices[0], lon_indices[1]+1)
+		return ColumnSlice4D(t_slice, slice(None), lat_slice, lon_slice)
 
 	def get_slicer_1D(self, point):
-	    t_indices = index_range(self.ut, point.time)
-	    t_slice = slice(t_indices[0], t_indices[1]+1)
-	    return t_slice
+		t_indices = index_range(self.ut, point.time)
+		t_slice = slice(t_indices[0], t_indices[1]+1)
+		return t_slice
 
 	def get_column_slice_3D(self, point):
-	    lat_indices = index_range(self.lat, point.latitude)
-	    lat_slice = slice(lat_indices[0], lat_indices[1]+1)
-	    
-	    lon_indices = index_range(self.lon, point.longitude)
-	    lon_slice = slice(lon_indices[0], lon_indices[1]+1)
-	    return ColumnSlice3D(slice(None), lat_slice, lon_slice)
+		lat_indices = index_range(self.lat, point.latitude)
+		lat_slice = slice(lat_indices[0], lat_indices[1]+1)
+		
+		lon_indices = index_range(self.lon, point.longitude)
+		lon_slice = slice(lon_indices[0], lon_indices[1]+1)
+		return ColumnSlice3D(slice(None), lat_slice, lon_slice)
 
 	def get_3D_column(self, column_slice):
 		lat_column = self.lat_[column_slice[1:]] #3d
@@ -408,8 +408,39 @@ class TIEGCM(object):
 
 		return np.interp(time, [t0, t1], [r0, r1]), (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1)
 
+	def molecular_mass_density(self, point, variable_name, time, density_tot):
+		mmr = self.time_interpolate(point, variable_name, time)
+		return mmr*density_tot/(1+mmr)
+
+	def mass_density(self, point, time):
+		'''Total extrapolated neutral density in g/cm^3'''
+		density_tot = self.time_interpolate(point, 'DEN', time) # total mass density
+		h_bndy = self.time_interpolate(point, 'Z', time)
+		if point.height > h_bndy:    
+			den_O1 = molecular_mass_density(self, point, 'O1', time, density_tot)
+			den_O2 = molecular_mass_density(self, point, 'O2', time, density_tot)
+
+			O_N2_ratio = self.time_interpolate(point, 'O_N2', time)
+			den_N2 = den_O1/O_N2_ratio
+
+			T = self.time_interpolate(point, 'TN', time) # neutral temperature [K]
+
+			h_O1 = scale_height(T, point.height, 16)*100
+			den_O1 *= np.exp((h_bndy - point.height)/h_O1)
+
+			h_O2 = scale_height(T, point.height, 32)*100
+			den_O2 *= np.exp((h_bndy - point.height)/h_O2)
+
+			h_N2 = scale_height(T, point.height, 28)*100
+			den_N2 *= np.exp((h_bndy - point.height)/h_N2)
+
+			rho = 16*den_O1 + 32*den_O2 + 28*den_N2
+			return rho
+		else:
+			return density_tot
+
 	def density(self, xlat, xlon, xalt, time):
-		return self.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)
+		return self.mass_density(Point3D(xalt, xlat, xlon), time)
 
 z_test = 39005780. # a mid range test height in cm 
 

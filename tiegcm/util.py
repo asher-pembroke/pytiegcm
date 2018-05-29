@@ -5,6 +5,19 @@ import numpy.ma as ma
 
 R_e = 6.371008e8 #cm
 
+k = 1.38064852e-23 # [J/K]
+m_p = 1.6726e-27 # [kg]
+g_0 = 9.807 # [m/s^2]
+
+def gravity(h):
+    """For h in same units as R_e"""
+    return g_0*pow(R_e/(R_e + h), 2)
+
+def scale_height(T, height, molecular_mass):
+	'''Scale height in meters, assuming mks'''
+	return k*T/(gravity(height)*molecular_mass*m_p)
+
+
 Point4D = namedtuple("Point4D", ['time','height', 'latitude','longitude'])
 Point3D = namedtuple("Point3D", ['height', 'latitude','longitude'])
 Point2D = namedtuple("Point2D", ['latitude', 'longitude'])
