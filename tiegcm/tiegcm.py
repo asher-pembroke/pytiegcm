@@ -414,14 +414,20 @@ class TIEGCM(object):
 
 	def mass_density(self, point, time):
 		'''Total extrapolated neutral density in g/cm^3'''
-		density_tot = self.time_interpolate(point, 'DEN', time) # total mass density
-		h_bndy = self.time_interpolate(point, 'Z', time)
-		if point.height > h_bndy:    
-			den_O1 = molecular_mass_density(self, point, 'O1', time, density_tot)
-			den_O2 = molecular_mass_density(self, point, 'O2', time, density_tot)
+		# Todo: have it consistent with only 3 species above and below max alt
+		# Fix N2
+		density_tot = self.time_interpolate(point, 'DEN', time) # total mass density [g/cm^3]
 
-			O_N2_ratio = self.time_interpolate(point, 'O_N2', time)
-			den_N2 = den_O1/O_N2_ratio
+		den_O1 = self.molecular_mass_density(point, 'O1', time, density_tot)
+		den_O2 = self.molecular_mass_density(point, 'O2', time, density_tot)
+
+		N2_n = self.time_interpolate(point, 'N2N', time)
+		den_N2 = N2_n*m_p*28
+
+
+		h_bndy = self.time_interpolate(point, 'Z', time)
+
+		if point.height > h_bndy: 
 
 			T = self.time_interpolate(point, 'TN', time) # neutral temperature [K]
 
@@ -434,10 +440,8 @@ class TIEGCM(object):
 			h_N2 = scale_height(T, point.height, 28)*100
 			den_N2 *= np.exp((h_bndy - point.height)/h_N2)
 
-			rho = 16*den_O1 + 32*den_O2 + 28*den_N2
-			return rho
-		else:
-			return density_tot
+		rho = den_O1 + den_O2 + den_N2
+		return rho
 
 	def density(self, xlat, xlon, xalt, time):
 		return self.mass_density(Point3D(xalt, xlat, xlon), time)
@@ -801,10 +805,6 @@ def test_density_function():
 	time = 3.5 #ut hours
 	result = tiegcm.density(xlat, xlon, xalt, time)*1e3
 	result2 = tiegcm.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)*1e3
-	print "{} ~ {} [kg/m^3]".format(result, result2)
+	print "{} < {} [kg/m^3] ?".format(result, result2)
+	assert result < result2
 
-	assert np.isclose(result, result2)
-
-
-def test_mjd_time():
-	assert False
