@@ -56,7 +56,11 @@ class TimeInterpolator(object):
 		"""takes an ordered dictionary of interpolators keyed by time"""
 		# print 'creating TimeInterpolator'
 		self.interpolators = interpolators
-		t0, t1 = interpolators.keys()
+		try:
+			t0, t1 = interpolators.keys()
+		except:
+			print interpolators.keys()
+			raise
 		self.t0 = t0
 		self.t1 = t1
 	def __call__(self, point, time):
@@ -446,6 +450,15 @@ class TIEGCM(object):
 	def density(self, xlat, xlon, xalt, time):
 		return self.mass_density(Point3D(xalt, xlat, xlon), time)
 
+	def get_time_range(self):
+		start_year = self.rootgrp.variables['year'][0]
+		start_day = self.rootgrp.variables['day'][0]
+		end_ut = self.rootgrp.variables['ut'][-1]
+		start = to_date(start_year, start_day)
+		end = start + pd.Timedelta(hours = end_ut)
+		return start, end
+
+
 z_test = 39005780. # a mid range test height in cm 
 
 test_file = "sample_data/jasoon_shim_052317_IT_10/out/s001.nc"
@@ -495,6 +508,15 @@ def test_custom_time_interpolator():
 
 	time_interpolator = TimeInterpolator(interpolators)
 	assert time_interpolator(None, .5) == 4.5
+
+
+def test_time_interpolate_start():
+	## This should replicate the delaunay test above
+	tiegcm = TIEGCM(test_file)
+	point = Point3D(z_test,  87.,  170. )
+	variable_name ='Z'
+
+	result = tiegcm.time_interpolate(point, variable_name, tiegcm.ut.min())
 
 
 def test_time_interpolate():
@@ -796,7 +818,6 @@ def test_interpolator_high_altitude_matches():
 	assert np.isclose(result, result2)	
 
 
-
 def test_density_function():
 	tiegcm = TIEGCM(test_file)
 	xlat = -8.81183
@@ -807,4 +828,17 @@ def test_density_function():
 	result2 = tiegcm.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)*1e3
 	print "{} < {} [kg/m^3] ?".format(result, result2)
 	assert result < result2
+
+def test_time_range():
+	tiegcm = TIEGCM(test_file)
+	start, end = tiegcm.get_time_range()
+	test_start, test_end = pd.Timestamp('2012-10-01 00:00:00'), pd.Timestamp('2012-10-01 08:00:00')
+	assert start == test_start
+	assert end == test_end
+
+
+
+
+
+
 

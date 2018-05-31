@@ -17,6 +17,13 @@ def scale_height(T, height, molecular_mass):
 	'''Scale height in meters, assuming mks'''
 	return k*T/(gravity(height)*molecular_mass*m_p)
 
+def to_date(year, doy):
+	return pd.to_datetime(str(year) + str(doy),format ='%Y%j')
+
+
+def time_in_interval(time, interval): 
+	'''time in [t0, t1)'''
+	return interval[0] <= time < interval[1]
 
 Point4D = namedtuple("Point4D", ['time','height', 'latitude','longitude'])
 Point3D = namedtuple("Point3D", ['height', 'latitude','longitude'])
