@@ -472,7 +472,8 @@ class Model_Manager(TIEGCM):
 		self.last_interval = self.file_times[self.files[0]]
 		
 		TIEGCM.__init__(self, self.files[0], outermost_layer = self.outermost_layer)
-
+		print 'model manager initialized'
+		print 'current time', self.file_times[self.files[0]]
 		
 	def get_files(self, directory = None, file_list = None, file_type = ".nc", match_str = "s", 
 					start = 0, stop = None, **kwargs):
@@ -510,6 +511,7 @@ class Model_Manager(TIEGCM):
 	
 	def density(self, xlat, xlon, xalt, epoch_time):
 		time = pd.to_datetime(epoch_time, unit = 's')
+		print 'current time', time
 		if not time_in_interval(time, self.last_interval):
 			filename = self.get_file_for_time(time)
 			self.last_interval = self.file_times[filename]
