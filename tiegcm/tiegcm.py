@@ -508,7 +508,8 @@ class Model_Manager(TIEGCM):
 		dt_hours = dt.total_seconds()/3600
 		return dt_hours
 	
-	def density(self, xlat, xlon, xalt, time):
+	def density(self, xlat, xlon, xalt, epoch_time):
+		time = pd.to_datetime(epoch_time, unit = 's')
 		if not time_in_interval(time, self.last_interval):
 			filename = self.get_file_for_time(time)
 			self.last_interval = self.file_times[filename]
@@ -902,6 +903,7 @@ def test_model_manager_density():
 	mm = Model_Manager(test_dir)
 
 	time = pd.Timestamp('2012-10-01 1:00:02')
+	epoch_time = datetime_to_epoch(time)
 	time_ut = mm.time_to_ut(time)
 
 	tiegcm = TIEGCM(test_file)
@@ -911,7 +913,7 @@ def test_model_manager_density():
 	xalt = 361.10342*1e5 #cm
 
 	result = tiegcm.density(xlat, xlon, xalt, time_ut)*1e3
-	result2 = mm.density(xlat, xlon, xalt, time)*1e3
+	result2 = mm.density(xlat, xlon, xalt, epoch_time)*1e3
 	print "{} = {} [kg/m^3] ?".format(result, result2)
 	assert np.isclose(result, result2)
 

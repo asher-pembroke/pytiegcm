@@ -25,6 +25,9 @@ def time_in_interval(time, interval):
 	'''time in [t0, t1)'''
 	return interval[0] <= time < interval[1]
 
+def datetime_to_epoch(time):
+    return (time - pd.datetime(1970,1,1)).total_seconds()
+
 Point4D = namedtuple("Point4D", ['time','height', 'latitude','longitude'])
 Point3D = namedtuple("Point3D", ['height', 'latitude','longitude'])
 Point2D = namedtuple("Point2D", ['latitude', 'longitude'])
