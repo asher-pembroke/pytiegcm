@@ -1,6 +1,6 @@
 from netCDF4 import Dataset
 import numpy as np
-
+import os
 from collections import defaultdict
 
 from collections import namedtuple
@@ -459,6 +459,66 @@ class TIEGCM(object):
 		return start, end
 
 
+class Model_Manager(TIEGCM):
+	"""Class to manage time interpolation for multiple files
+	
+	"""
+	def __init__(self, directory = None, outermost_layer = -1):
+		self.outermost_layer = outermost_layer
+		if directory is not None:
+			self.files = self.get_files(directory)
+			self.set_file_times()
+			
+		self.last_interval = self.file_times[self.files[0]]
+		
+		TIEGCM.__init__(self, self.files[0], outermost_layer = self.outermost_layer)
+
+		
+	def get_files(self, directory = None, file_list = None, file_type = ".nc", match_str = "s", 
+					start = 0, stop = None, **kwargs):
+		"""Walks through subdirectories and retrieves 's*.nc' files sorted by filename"""
+		nc_files = []                 
+		if directory is not None:
+			for path, subdirs, files in os.walk(os.path.expanduser(directory)):
+				for name in files:
+					if name.endswith(file_type) and match_str in name: 
+						nc_files.append(os.path.join(path,name))
+		elif file_list is not None:
+			for name in file_list:
+				if name.endswith(file_type) and match_str in name: 
+					nc_files.append(name)
+		else:
+			raise IOError("Need to specify a directory or file listing")
+		return nc_files
+
+	def set_file_times(self):
+		self.file_times = dict()
+		for f in self.files:
+			TIEGCM.__init__(self, f)
+			self.file_times[f] = self.get_time_range()
+			
+	def get_file_for_time(self, time):
+		for filename, interval in self.file_times.items(): 
+			if time_in_interval(time, interval):
+				return filename
+		raise ValueError('Could not find time in files')
+	
+	def time_to_ut(self, time):
+		dt = time-self.last_interval[0]
+		dt_hours = dt.total_seconds()/3600
+		return dt_hours
+	
+	def density(self, xlat, xlon, xalt, time):
+		if not time_in_interval(time, self.last_interval):
+			filename = self.get_file_for_time(time)
+			self.last_interval = self.file_times[filename]
+			TIEGCM.__init__(self, filename, self.outermost_layer)
+		
+		return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
+	
+	# repeat for other methods, although it would be nicer to do check type(time) instead
+
+
 z_test = 39005780. # a mid range test height in cm 
 
 test_file = "sample_data/jasoon_shim_052317_IT_10/out/s001.nc"
@@ -837,6 +897,23 @@ def test_time_range():
 	assert end == test_end
 
 
+def test_model_manager_density():
+	test_dir = os.path.dirname(os.path.realpath(test_file))
+	mm = Model_Manager(test_dir)
+
+	time = pd.Timestamp('2012-10-01 1:00:02')
+	time_ut = mm.time_to_ut(time)
+
+	tiegcm = TIEGCM(test_file)
+
+	xlat = -8.81183
+	xlon = 161.96608
+	xalt = 361.10342*1e5 #cm
+
+	result = tiegcm.density(xlat, xlon, xalt, time_ut)*1e3
+	result2 = mm.density(xlat, xlon, xalt, time)*1e3
+	print "{} = {} [kg/m^3] ?".format(result, result2)
+	assert np.isclose(result, result2)
 
 
 
