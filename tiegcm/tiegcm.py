@@ -510,15 +510,18 @@ class Model_Manager(TIEGCM):
 		return dt_hours
 	
 	def density(self, xlat, xlon, xalt, epoch_time):
-		time = pd.to_datetime(epoch_time, unit = 's')
-		print 'current time', time
-		if not time_in_interval(time, self.last_interval):
-			filename = self.get_file_for_time(time)
-			self.last_interval = self.file_times[filename]
-			TIEGCM.__init__(self, filename, self.outermost_layer)
-		
-		return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
-	
+		try:
+			time = pd.to_datetime(epoch_time, unit = 's')
+			if not time_in_interval(time, self.last_interval):
+				filename = self.get_file_for_time(time)
+				self.last_interval = self.file_times[filename]
+				TIEGCM.__init__(self, filename, self.outermost_layer)
+			
+			return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
+		except:
+			print 'TIEGCM error at xlat: {}, xlon: {}, xalt: {}, epoch_time: {}'.format(xlat, xlon, xalt, epoch_time)
+			return 0
+
 	# repeat for other methods, although it would be nicer to do check type(time) instead
 
 
@@ -919,7 +922,7 @@ def test_model_manager_density():
 	print "{} = {} [kg/m^3] ?".format(result, result2)
 	assert np.isclose(result, result2)
 
-
-
+	result3 = mm.density(xlat, xlon, xalt, 0)
+	assert result3 == 0
 
 
