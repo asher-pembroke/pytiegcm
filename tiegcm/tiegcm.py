@@ -509,9 +509,9 @@ class Model_Manager(TIEGCM):
 		dt_hours = dt.total_seconds()/3600
 		return dt_hours
 	
-	def density(self, xlat, xlon, xalt, epoch_time):
+	def density(self, xlat, xlon, xalt, gregorian_string):
 		try:
-			time = pd.to_datetime(epoch_time, unit = 's')
+			time = pd.to_datetime(gregorian_string)
 			if not time_in_interval(time, self.last_interval):
 				filename = self.get_file_for_time(time)
 				self.last_interval = self.file_times[filename]
@@ -519,7 +519,7 @@ class Model_Manager(TIEGCM):
 			
 			return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
 		except:
-			print 'TIEGCM error at xlat: {}, xlon: {}, xalt: {}, epoch_time: {}'.format(xlat, xlon, xalt, epoch_time)
+			print 'TIEGCM error at xlat: {}, xlon: {}, xalt: {}, gregorian str: {}'.format(xlat, xlon, xalt, gregorian_string)
 			return 0
 
 	# repeat for other methods, although it would be nicer to do check type(time) instead
@@ -904,22 +904,25 @@ def test_time_range():
 
 
 def test_model_manager_density():
+	# datetime 2012-10-01T01:00:02.000 utcepoch 26201.5416898 xlat: -3.69857 xlon: -156.48846  xalt [km]: 360.01468
 	test_dir = os.path.dirname(os.path.realpath(test_file))
 	mm = Model_Manager(test_dir)
 
-	time = pd.Timestamp('2012-10-01 1:00:02')
+	time_str = '2012-10-01T01:00:07.833'
+
+	time = pd.Timestamp(time_str)
 	epoch_time = datetime_to_epoch(time)
 	time_ut = mm.time_to_ut(time)
 
 	tiegcm = TIEGCM(test_file)
 
-	xlat = -8.81183
-	xlon = 161.96608
-	xalt = 361.10342*1e5 #cm
+	xlat = -3.69857
+	xlon = -156.48846
+	xalt = 360.10342*1e5 #cm
 
 	result = tiegcm.density(xlat, xlon, xalt, time_ut)*1e3
-	result2 = mm.density(xlat, xlon, xalt, epoch_time)*1e3
-	print "{} = {} [kg/m^3] ?".format(result, result2)
+	result2 = mm.density(xlat, xlon, xalt, time_str)*1e3
+	print "{}: {} = {} [kg/m^3] ?".format(epoch_time, result, result2)
 	assert np.isclose(result, result2)
 
 	result3 = mm.density(xlat, xlon, xalt, 0)
