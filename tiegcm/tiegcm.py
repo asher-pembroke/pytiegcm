@@ -59,8 +59,13 @@ class TimeInterpolator(object):
 		try:
 			t0, t1 = interpolators.keys()
 		except:
-			print interpolators.keys()
-			raise
+			if len(interpolators.keys()) == 1:
+				t0 = interpolators.keys()[0]
+				t1 = t0
+			else:
+				print 'could not construct TimeInterpolator with keys',
+				print interpolators.keys()
+				raise
 		self.t0 = t0
 		self.t1 = t1
 	def __call__(self, point, time):
@@ -103,6 +108,8 @@ class TIEGCM(object):
 		self.ilev_, self.lat_, self.lon_ = scipy.meshgrid(self.ilev, self.lat, self.lon, indexing = 'ij')
 
 		self.ut = np.array(self.rootgrp.variables['ut'])
+		if self.ut[-1] < self.ut[0]:
+			self.ut[-1] += 24
 
 		self.z_scale = 100000
 
@@ -217,7 +224,6 @@ class TIEGCM(object):
 	def get_column_slicer_4D(self, point):
 		t_indices = index_range(self.ut, point.time)
 		t_slice = slice(t_indices[0], t_indices[1]+1)
-		
 		lat_indices = index_range(self.lat, point.latitude)
 		lat_slice = slice(lat_indices[0], lat_indices[1]+1)
 
@@ -352,6 +358,7 @@ class TIEGCM(object):
 		column_slicer = self.get_column_slicer_4D(Point4D(time, *point))
 		slice_key = self.get_slice_key_4D(column_slicer, variable_name)
 		p = point[0]/self.z_scale, point[1], to_range(point[2], self.longitude_min, self.longitude_max)
+		# import ipdb; ipdb.set_trace()
 		result = self.time_interpolators[slice_key](p, time)
 		if np.isnan(result):
 			return self.time_interpolate_high_altitude(point, variable_name, time)
@@ -402,13 +409,21 @@ class TIEGCM(object):
 		column_slicer = self.get_column_slicer_4D(Point4D(time, *p))
 		t0 = column_slicer.time.start
 		t1 = t0 + 1
+		# import ipdb; ipdb.set_trace()
+
 		if not return_variables:
 			r0 = self.interpolate_high_altitude(p, variable_name, t0)
-			r1 = self.interpolate_high_altitude(p, variable_name, t1)
-			return np.interp(time, [t0, t1], [r0, r1])
+			try:
+				r1 = self.interpolate_high_altitude(p, variable_name, t1)
+				return np.interp(time, [t0, t1], [r0, r1])
+			except:
+				return r0
 		else:
 			r0, variables0, lat_indices0, lon_indices0 = self.interpolate_high_altitude(p, variable_name, t0, return_variables)
-			r1, variables1, lat_indices1, lon_indices1 = self.interpolate_high_altitude(p, variable_name, t1, return_variables)
+			try:
+				r1, variables1, lat_indices1, lon_indices1 = self.interpolate_high_altitude(p, variable_name, t1, return_variables)
+			except:
+				return r0, variables0, lat_indices0, lon_indices0
 
 		return np.interp(time, [t0, t1], [r0, r1]), (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1)
 
@@ -453,15 +468,20 @@ class TIEGCM(object):
 	def get_time_range(self):
 		start_year = self.rootgrp.variables['year'][0]
 		start_day = self.rootgrp.variables['day'][0]
-		end_ut = self.rootgrp.variables['ut'][-1]
-		start = to_date(start_year, start_day)
-		end = start + pd.Timedelta(hours = end_ut)
+		date = to_date(start_year, start_day)
+		start_ut = self.ut[0]
+		end_ut = self.ut[-1]
+		start = date + pd.Timedelta(hours = start_ut)
+		end = date + pd.Timedelta(hours = end_ut)
+		if end < start:
+			raise IOError
 		return start, end
 
 
 class Model_Manager(TIEGCM):
 	"""Class to manage time interpolation for multiple files
-	
+	Since files begin at +20 minutes and end on the hour, we need to handle the case
+	where a query lies between the time ranges of successive files.
 	"""
 	def __init__(self, directory = None, outermost_layer = -1):
 		self.outermost_layer = outermost_layer
@@ -474,6 +494,11 @@ class Model_Manager(TIEGCM):
 		TIEGCM.__init__(self, self.files[0], outermost_layer = self.outermost_layer)
 		print 'model manager initialized'
 		print 'current time', self.file_times[self.files[0]]
+
+
+	def file_interpolate(self, xlat, xlon, xalt, ut):
+		print 'interpolating between files'
+		print xlat, xlon, xalt, ut
 		
 	def get_files(self, directory = None, file_list = None, file_type = ".nc", match_str = "s", 
 					start = 0, stop = None, **kwargs):
@@ -503,402 +528,437 @@ class Model_Manager(TIEGCM):
 			if time_in_interval(time, interval):
 				return filename
 		raise ValueError('Could not find time in files')
+
 	
-	def time_to_ut(self, time):
-		dt = time-self.last_interval[0]
-		dt_hours = dt.total_seconds()/3600
-		return dt_hours
-	
-	def density(self, xlat, xlon, xalt, gregorian_string):
+	def time_to_ut(self, timestamp):
+		time = timestamp.time()
+		return time.hour + time.minute/60. + time.second/3600.
+
+	def time_in_range(self, time):
+		if self.file_times[self.files[0]][0] < time < self.file_times[self.files[-1]][1]:
+			for i in range(len(self.files)-1):
+				if time < self.file_times[self.files[i+1]][0]:
+					return self.files[i], self.files[i+1]
+		else:
+			return None
+
+
+	def density(self, xlat, xlon, xalt, gregorian_string, raise_errors = False, debug = False):
+		print xlat, xlon, xalt, gregorian_string, raise_errors
 		try:
 			time = pd.to_datetime(gregorian_string)
 			if not time_in_interval(time, self.last_interval):
-				filename = self.get_file_for_time(time)
-				self.last_interval = self.file_times[filename]
-				TIEGCM.__init__(self, filename, self.outermost_layer)
+				try:
+					filename = self.get_file_for_time(time)
+					self.last_interval = self.file_times[filename]
+					TIEGCM.__init__(self, filename, self.outermost_layer)
+				except ValueError: 
+					print 'time not in files, checking bounds'
+					closest_files = self.time_in_range(time)
+					if closest_files is not None:
+						t0 = self.file_times[closest_files[0]][1]
+						t1 = self.file_times[closest_files[1]][0]
+						print time, 'between', t0, t1 
+						print 'opening previous file'
+						TIEGCM.__init__(self, closest_files[0], self.outermost_layer)
+						tiegcm1 = TIEGCM(closest_files[1], self.outermost_layer)
+
+						d0 = TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(t0))
+						d1 = tiegcm1.density(xlat, xlon, xalt, self.time_to_ut(t1))
+						print d0, d1
+					raise
 			
 			return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
 		except:
 			print 'TIEGCM error at xlat: {}, xlon: {}, xalt: {}, gregorian str: {}'.format(xlat, xlon, xalt, gregorian_string)
-			return 0
+			if raise_errors:
+				raise
+			else:
+				return 0
 
 	# repeat for other methods, although it would be nicer to do check type(time) instead
 
 
 z_test = 39005780. # a mid range test height in cm 
 
-test_file = "sample_data/jasoon_shim_052317_IT_10/out/s001.nc"
+# test_file = "sample_data/jasoon_shim_052317_IT_10/out/s001.nc"
 
-def test_3D_column():
-	tiegcm = TIEGCM(test_file)
-	point = Point4D((tiegcm.ut[0]+tiegcm.ut[1])/2, 128.14398737, 87.,  170.  )	
-	columns = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))
-	assert columns[0].shape == (2, len(tiegcm.ilev), 2, 2)
-	for i in range(1,3):
-		assert columns[i].shape == (len(tiegcm.ilev), 2, 2)
+test_file = "sample_data/jasoon_shim_040118_IT_1/s001.nc"
 
-def test_column_slice():
-	tiegcm = TIEGCM(test_file)
-	point = Point4D((tiegcm.ut[0]+tiegcm.ut[1])/2, 128.14398737, 87.,  171.  )
-	column = tiegcm.get_column_slicer_4D(point)
+# test_file2 = "sample_data/jasoon_shim_040118_IT_1/s001.nc"
 
-	assert point.latitude > tiegcm.lat[column.latitude][0]
-	assert point.latitude < tiegcm.lat[column.latitude][1]
-	assert point.longitude > tiegcm.lon[column.longitude][0]
-	assert point.longitude < tiegcm.lon[column.longitude][1]
+
+# def test_3D_column():
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point4D((tiegcm.ut[0]+tiegcm.ut[1])/2, 128.14398737, 87.,  170.  )	
+# 	columns = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))
+# 	assert columns[0].shape == (2, len(tiegcm.ilev), 2, 2)
+# 	for i in range(1,3):
+# 		assert columns[i].shape == (len(tiegcm.ilev), 2, 2)
+
+# def test_column_slice():
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point4D((tiegcm.ut[0]+tiegcm.ut[1])/2, 128.14398737, 87.,  171.  )
+# 	column = tiegcm.get_column_slicer_4D(point)
+
+# 	assert point.latitude > tiegcm.lat[column.latitude][0]
+# 	assert point.latitude < tiegcm.lat[column.latitude][1]
+# 	assert point.longitude > tiegcm.lon[column.longitude][0]
+# 	assert point.longitude < tiegcm.lon[column.longitude][1]
 
 	
-def test_Delaunay_height():
-	tiegcm = TIEGCM(test_file)
-	point = Point4D(3.5, z_test,  87.,  170. )
-	z_column, lat_column, lon_column = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))
-	delaunay = tiegcm.get_delaunay_3D(z_column, lat_column, lon_column, time_index = 0)
+# def test_Delaunay_height():
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point4D(3.5, z_test,  87.,  170. )
+# 	z_column, lat_column, lon_column = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))
+# 	delaunay = tiegcm.get_delaunay_3D(z_column, lat_column, lon_column, time_index = 0)
 
-	z = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))[0][0]
+# 	z = tiegcm.get_3D_column(tiegcm.get_column_slicer_4D(point))[0][0]
 	
-	scaled_point = z_test/tiegcm.z_scale, point[2], point[3]
-	linear_interpolator = LinearNDInterpolator(delaunay, z.ravel()/tiegcm.z_scale, fill_value = tiegcm.fill_value)
+# 	scaled_point = z_test/tiegcm.z_scale, point[2], point[3]
+# 	linear_interpolator = LinearNDInterpolator(delaunay, z.ravel()/tiegcm.z_scale, fill_value = tiegcm.fill_value)
 	
-	assert isclose(scaled_point[0], linear_interpolator(scaled_point))
+# 	assert isclose(scaled_point[0], linear_interpolator(scaled_point))
 
 
-def test_custom_time_interpolator():
-	class TestInterpolator(object):
-		def __init__(self, value):
-			self.value = value
-		def __call__(self, point):
-			return self.value
+# def test_custom_time_interpolator():
+# 	class TestInterpolator(object):
+# 		def __init__(self, value):
+# 			self.value = value
+# 		def __call__(self, point):
+# 			return self.value
 
-	interpolators = OrderedDict([(0.0, TestInterpolator(5.0)),
-								(1.0, TestInterpolator(4.0))])
+# 	interpolators = OrderedDict([(0.0, TestInterpolator(5.0)),
+# 								(1.0, TestInterpolator(4.0))])
 
-	time_interpolator = TimeInterpolator(interpolators)
-	assert time_interpolator(None, .5) == 4.5
-
-
-def test_time_interpolate_start():
-	## This should replicate the delaunay test above
-	tiegcm = TIEGCM(test_file)
-	point = Point3D(z_test,  87.,  170. )
-	variable_name ='Z'
-
-	result = tiegcm.time_interpolate(point, variable_name, tiegcm.ut.min())
+# 	time_interpolator = TimeInterpolator(interpolators)
+# 	assert time_interpolator(None, .5) == 4.5
 
 
-def test_time_interpolate():
-	## This should replicate the delaunay test above
-	tiegcm = TIEGCM(test_file)
-	point = Point3D(z_test,  87.,  170. )
-	variable_name ='Z'
+# def test_time_interpolate_start():
+# 	## This should replicate the delaunay test above
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point3D(z_test,  87.,  170. )
+# 	variable_name ='Z'
 
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-	variable_name = 'NE'
-	print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)
-
-def test_time_interpolate_edge():
-	tiegcm = TIEGCM(test_file)
-	variable_name ='Z'
-
-	point = Point3D(z_test,  87.,  tiegcm.lon.min() )
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-	point = Point3D(z_test,  87.,  tiegcm.lon.min() - 1 )
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-	point = Point3D(z_test,  87.,  tiegcm.lon.max() )
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-	point = Point3D(z_test,  87.,  tiegcm.lon.max() + 1)
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
+# 	result = tiegcm.time_interpolate(point, variable_name, tiegcm.ut.min())
 
 
-def test_time_interpolate_2D():
-	tiegcm = TIEGCM(test_file)
-	point = Point2D(87.,  170. )
-	variable_name = 'EFLUX'
-	print variable_name, point, tiegcm.time_interpolate_2D(point, variable_name, 3.5)
-	variable_name = 'latitude'
-	assert isclose(point.latitude, tiegcm.time_interpolate_2D(point, variable_name, 3.5))
+# def test_time_interpolate():
+# 	## This should replicate the delaunay test above
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point3D(z_test,  87.,  170. )
+# 	variable_name ='Z'
 
-def test_time_interpolate_2D_edge():
-	tiegcm = TIEGCM(test_file)
-	variable_name = 'longitude' # longitude has not been converted to [longitude_min, longitude_max]
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+# 	variable_name = 'NE'
+# 	print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)
 
-	point = Point2D(87.,  tiegcm.lon.min() )
-	assert isclose(point.longitude, tiegcm.time_interpolate_2D(point, variable_name, 3.5))
-	point = Point2D(87.,  tiegcm.lon.max() + 1 )
-	assert isclose(to_range(point[1],tiegcm.longitude_min, tiegcm.longitude_max), 
-							tiegcm.time_interpolate_2D(point, variable_name, 3.5))
+# def test_time_interpolate_edge():
+# 	tiegcm = TIEGCM(test_file)
+# 	variable_name ='Z'
+
+# 	point = Point3D(z_test,  87.,  tiegcm.lon.min() )
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# 	point = Point3D(z_test,  87.,  tiegcm.lon.min() - 1 )
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# 	point = Point3D(z_test,  87.,  tiegcm.lon.max() )
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# 	point = Point3D(z_test,  87.,  tiegcm.lon.max() + 1)
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+
+# def test_time_interpolate_2D():
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point2D(87.,  170. )
+# 	variable_name = 'EFLUX'
+# 	print variable_name, point, tiegcm.time_interpolate_2D(point, variable_name, 3.5)
+# 	variable_name = 'latitude'
+# 	assert isclose(point.latitude, tiegcm.time_interpolate_2D(point, variable_name, 3.5))
+
+# def test_time_interpolate_2D_edge():
+# 	tiegcm = TIEGCM(test_file)
+# 	variable_name = 'longitude' # longitude has not been converted to [longitude_min, longitude_max]
+
+# 	point = Point2D(87.,  tiegcm.lon.min() )
+# 	assert isclose(point.longitude, tiegcm.time_interpolate_2D(point, variable_name, 3.5))
+# 	point = Point2D(87.,  tiegcm.lon.max() + 1 )
+# 	assert isclose(to_range(point[1],tiegcm.longitude_min, tiegcm.longitude_max), 
+# 							tiegcm.time_interpolate_2D(point, variable_name, 3.5))
 	
-def test_interpolate_3D():
-	tiegcm = TIEGCM(test_file)
-	point = Point3D(z_test,  87.,  170. )
-	result = tiegcm.interpolate_3D_point(point, 'Z', 5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
+# def test_interpolate_3D():
+# 	tiegcm = TIEGCM(test_file)
+# 	point = Point3D(z_test,  87.,  170. )
+# 	result = tiegcm.interpolate_3D_point(point, 'Z', 5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
 
-def test_units():
-	tiegcm = TIEGCM(test_file)
-	assert tiegcm.get_variable_unit('NE') == 'cm-3'
+# def test_units():
+# 	tiegcm = TIEGCM(test_file)
+# 	assert tiegcm.get_variable_unit('NE') == 'cm-3'
 
-def test_variable_list():
-	tiegcm = TIEGCM(test_file)
+# def test_variable_list():
+# 	tiegcm = TIEGCM(test_file)
 
-	varlist_2d = tiegcm.list_2d_variables()
-	for variable_name in varlist_2d:
-		assert len(tiegcm.rootgrp.variables[variable_name].shape) == 3
+# 	varlist_2d = tiegcm.list_2d_variables()
+# 	for variable_name in varlist_2d:
+# 		assert len(tiegcm.rootgrp.variables[variable_name].shape) == 3
 
-	varlist_3d = tiegcm.list_3d_variables()
-	for variable_name in varlist_3d:
-		assert len(tiegcm.rootgrp.variables[variable_name].shape) == 4
-
-
-
-def test_time_interpolate_speed():
-	## This should replicate the delaunay test above
-	tiegcm = TIEGCM(test_file)
-	npoints = 100
-	print 'speed test started with', npoints, 'points'
-	t = time.time()
-	expected = np.array(z_test)
-	rand_seed = 0 # gives qhull facet errors Looks like edge issue
-	# rand_seed = 1 # gives qhull index errors
-	np.random.seed(rand_seed)
-	try:
-		for lat, lon in zip( np.random.uniform(-80, 80, npoints), np.random.uniform(-180, 180, npoints)):
-			point = Point3D(z_test,  lat,  lon )
-			variable_name ='Z'
-			result = tiegcm.time_interpolate(point, variable_name, 3.5)
-			assert np.isclose(result, expected)	
-	except:
-		print 'test failed at', point
-		print 'ranges:', Point2D(	[str(len(tiegcm.lat))+":", tiegcm.lat.min(), tiegcm.lat.max()],
-									[str(len(tiegcm.lon))+":", tiegcm.lon.min(), tiegcm.lon.max()])
-		raise
-	dt = time.time() - t
-	print 'speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
-	# variable_name = 'NE'
-	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)
-
-def test_time_interpolate_pole():
-	tiegcm = TIEGCM(test_file)
-	variable_name ='Z'
-
-	point = Point3D(z_test,  88.,  tiegcm.lon.min() )
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-	point = Point3D(z_test,  88.,  tiegcm.lon.min() - 1 )
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-	point = Point3D(z_test,  88.,  tiegcm.lon.max() )
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-	point = Point3D(z_test,  88.,  tiegcm.lon.max() + 1)
-	result = tiegcm.time_interpolate(point, variable_name, 3.5)
-	expected = np.array(z_test)
-	assert isclose(result, expected)
-
-def test_high_altitude_triangle():
-	"""Test precision of triangle interpolation: 
-		lat/lon interpolation should match query point"""
-	tiegcm = TIEGCM(test_file, outermost_layer = -1)
-
-	time_index = 0
-	z = tiegcm.z[time_index][-1]
-
-	z_test = 1.1*z.max() # high altitude test
-	p = Point3D(z_test, 20.5, .5)
-
-	tree = tiegcm.get_outer_boundary_kdtree(time_index)
-	distances, vertices = tree.query(p, p = 1, k = 3) # p = 1 for Manhattan distance!
-
-	target_shape = tiegcm.lat_[-1].shape
-	coord_indices = np.array(zip(*np.unravel_index(vertices, target_shape)))
-
-	lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
-
-	lnd_lat = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lat_[-1][lat_indices, lon_indices])
-	lnd_lon = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lon_[-1][lat_indices, lon_indices])
-
-	print 'test_high_altitude_triangle: lat,lon_indices', lat_indices, lon_indices
-
-	assert (float(lnd_lat(p[1:])) == p.latitude)
-	assert (float(lnd_lon(p[1:])) == p.longitude)
+# 	varlist_3d = tiegcm.list_3d_variables()
+# 	for variable_name in varlist_3d:
+# 		assert len(tiegcm.rootgrp.variables[variable_name].shape) == 4
 
 
-def test_high_altitude_in_bounds():
-	"""Test that high latitude interpolation returns something reasonable"""
-	tiegcm = TIEGCM(test_file)
+
+# def test_time_interpolate_speed():
+# 	## This should replicate the delaunay test above
+# 	tiegcm = TIEGCM(test_file)
+# 	npoints = 100
+# 	print 'speed test started with', npoints, 'points'
+# 	t = time.time()
+# 	expected = np.array(z_test)
+# 	rand_seed = 0 # gives qhull facet errors Looks like edge issue
+# 	# rand_seed = 1 # gives qhull index errors
+# 	np.random.seed(rand_seed)
+# 	try:
+# 		for lat, lon in zip( np.random.uniform(-80, 80, npoints), np.random.uniform(-180, 180, npoints)):
+# 			point = Point3D(z_test,  lat,  lon )
+# 			variable_name ='Z'
+# 			result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 			assert np.isclose(result, expected)	
+# 	except:
+# 		print 'test failed at', point
+# 		print 'ranges:', Point2D(	[str(len(tiegcm.lat))+":", tiegcm.lat.min(), tiegcm.lat.max()],
+# 									[str(len(tiegcm.lon))+":", tiegcm.lon.min(), tiegcm.lon.max()])
+# 		raise
+# 	dt = time.time() - t
+# 	print 'speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
+# 	# variable_name = 'NE'
+# 	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)
+
+# def test_time_interpolate_pole():
+# 	tiegcm = TIEGCM(test_file)
+# 	variable_name ='Z'
+
+# 	point = Point3D(z_test,  88.,  tiegcm.lon.min() )
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# 	point = Point3D(z_test,  88.,  tiegcm.lon.min() - 1 )
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# 	point = Point3D(z_test,  88.,  tiegcm.lon.max() )
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# 	point = Point3D(z_test,  88.,  tiegcm.lon.max() + 1)
+# 	result = tiegcm.time_interpolate(point, variable_name, 3.5)
+# 	expected = np.array(z_test)
+# 	assert isclose(result, expected)
+
+# def test_high_altitude_triangle():
+# 	"""Test precision of triangle interpolation: 
+# 		lat/lon interpolation should match query point"""
+# 	tiegcm = TIEGCM(test_file, outermost_layer = -1)
+
+# 	time_index = 0
+# 	z = tiegcm.z[time_index][-1]
+
+# 	z_test = 1.1*z.max() # high altitude test
+# 	p = Point3D(z_test, 20.5, .5)
+
+# 	tree = tiegcm.get_outer_boundary_kdtree(time_index)
+# 	distances, vertices = tree.query(p, p = 1, k = 3) # p = 1 for Manhattan distance!
+
+# 	target_shape = tiegcm.lat_[-1].shape
+# 	coord_indices = np.array(zip(*np.unravel_index(vertices, target_shape)))
+
+# 	lat_indices, lon_indices = coord_indices[:,0], coord_indices[:,1]
+
+# 	lnd_lat = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lat_[-1][lat_indices, lon_indices])
+# 	lnd_lon = LinearNDInterpolator(tree.data[vertices][:,1:], tiegcm.lon_[-1][lat_indices, lon_indices])
+
+# 	print 'test_high_altitude_triangle: lat,lon_indices', lat_indices, lon_indices
+
+# 	assert (float(lnd_lat(p[1:])) == p.latitude)
+# 	assert (float(lnd_lon(p[1:])) == p.longitude)
+
+
+# def test_high_altitude_in_bounds():
+# 	"""Test that high latitude interpolation returns something reasonable"""
+# 	tiegcm = TIEGCM(test_file)
 	
-	for time_index in range(5):
-		time_index = 0
-		z = tiegcm.z[time_index][-1]
+# 	for time_index in range(5):
+# 		time_index = 0
+# 		z = tiegcm.z[time_index][-1]
 
-		z_test = 1.1*z.max() # high altitude test
+# 		z_test = 1.1*z.max() # high altitude test
 
-		p = Point3D(z_test, 20.5, .5)
+# 		p = Point3D(z_test, 20.5, .5)
 
-		variable_name = 'Z'
-		result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
+# 		variable_name = 'Z'
+# 		result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(p, variable_name, time_index, True)
 
-		assert variable.min() <= result <= variable.max()
-		print 'test_high_altitude_in_bounds', result
-
-
-def test_high_altitude_speed():
-	time_index = 0
-	tiegcm = TIEGCM(test_file)
-	npoints = 100
-	print 'high altitude speed test started with', npoints, 'points'
-	t = time.time()
-	z_test = 1.1*tiegcm.z[time_index][-1].max()
-
-	rand_seed = 0 
-	np.random.seed(rand_seed)
-	try:
-		for lat, lon in zip( np.random.uniform(-80, 80, npoints), np.random.uniform(-180, 180, npoints)):
-			point = Point3D(z_test,  lat,  lon )
-			variable_name ='Z'
-
-			result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(point, variable_name, time_index, True)
-			try:
-				assert variable.min() <= result <= variable.max()
-			except:
-				try:
-					assert (True in [np.isclose(result, v) for v in variable])
-				except:
-					print 'not even close'
-					raise
-	except:
-		print 'test failed at', point
-		# print 'result:', result
-		# print 'nearby variable {} values:'.format(variable_name), variable
-		raise
-	dt = time.time() - t
-	print 'high altitude speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
-	# variable_name = 'NE'
-	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)	
+# 		assert variable.min() <= result <= variable.max()
+# 		print 'test_high_altitude_in_bounds', result
 
 
-def test_time_interpolate_high_altitude():
-	tiegcm = TIEGCM(test_file)
+# def test_high_altitude_speed():
+# 	time_index = 0
+# 	tiegcm = TIEGCM(test_file)
+# 	npoints = 100
+# 	print 'high altitude speed test started with', npoints, 'points'
+# 	t = time.time()
+# 	z_test = 1.1*tiegcm.z[time_index][-1].max()
 
-	time = 3.5
+# 	rand_seed = 0 
+# 	np.random.seed(rand_seed)
+# 	try:
+# 		for lat, lon in zip( np.random.uniform(-80, 80, npoints), np.random.uniform(-180, 180, npoints)):
+# 			point = Point3D(z_test,  lat,  lon )
+# 			variable_name ='Z'
 
-	z_max = tiegcm.z.max()
-	z_test = 1.1*z_max
-	p4 = Point4D(time, z_test, 20.5, .5)
+# 			result, variable, lat_indices, lon_indices = tiegcm.interpolate_high_altitude(point, variable_name, time_index, True)
+# 			try:
+# 				assert variable.min() <= result <= variable.max()
+# 			except:
+# 				try:
+# 					assert (True in [np.isclose(result, v) for v in variable])
+# 				except:
+# 					print 'not even close'
+# 					raise
+# 	except:
+# 		print 'test failed at', point
+# 		# print 'result:', result
+# 		# print 'nearby variable {} values:'.format(variable_name), variable
+# 		raise
+# 	dt = time.time() - t
+# 	print 'high altitude speed test finished', dt, 'seconds', dt/npoints, '[sec/point]'
+# 	# variable_name = 'NE'
+# 	# print variable_name, point, tiegcm.time_interpolate(point, variable_name, 3.5)	
 
-	column_slicer = tiegcm.get_column_slicer_4D(p4)
-	z_column, lat_column, lon_column = tiegcm.get_3D_column(column_slicer)
 
-	time_index = column_slicer.time.start
+# def test_time_interpolate_high_altitude():
+# 	tiegcm = TIEGCM(test_file)
+
+# 	time = 3.5
+
+# 	z_max = tiegcm.z.max()
+# 	z_test = 1.1*z_max
+# 	p4 = Point4D(time, z_test, 20.5, .5)
+
+# 	column_slicer = tiegcm.get_column_slicer_4D(p4)
+# 	z_column, lat_column, lon_column = tiegcm.get_3D_column(column_slicer)
+
+# 	time_index = column_slicer.time.start
 
 
-	# z = tiegcm.z[time_index, -1, :, :] # topmost layer
+# 	# z = tiegcm.z[time_index, -1, :, :] # topmost layer
 	
-	top_z = z_column[:,-1,:,:]
+# 	top_z = z_column[:,-1,:,:]
 
 
-	p = Point3D(*p4[1:])
-	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'Z', time, True)
+# 	p = Point3D(*p4[1:])
+# 	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'Z', time, True)
 	
-	lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
-	assert lat_layers.min() <= p.latitude <= lat_layers.max()
+# 	lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
+# 	assert lat_layers.min() <= p.latitude <= lat_layers.max()
 
-	lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
-	assert lon_layers.min() <= p.longitude <= lon_layers.max()
+# 	lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
+# 	assert lon_layers.min() <= p.longitude <= lon_layers.max()
 	
-	z_layers = np.stack((variables0, variables1))
-	assert z_layers.min() <= result <= z_layers.max() # result is between interpolating triangles
+# 	z_layers = np.stack((variables0, variables1))
+# 	assert z_layers.min() <= result <= z_layers.max() # result is between interpolating triangles
 
-	assert top_z.min() <= result <= top_z.max() # result has position between column tops
+# 	assert top_z.min() <= result <= top_z.max() # result has position between column tops
 
-def test_time_interpolate_high_altitude_temperature():
-	tiegcm = TIEGCM(test_file)
+# def test_time_interpolate_high_altitude_temperature():
+# 	tiegcm = TIEGCM(test_file)
 
-	time = 3.5
+# 	time = 3.5
 
-	z_max = tiegcm.z.max()
-	z_test = 1.1*z_max
-	p4 = Point4D(time, z_test, 20.5, .5)
+# 	z_max = tiegcm.z.max()
+# 	z_test = 1.1*z_max
+# 	p4 = Point4D(time, z_test, 20.5, .5)
 
-	column_slicer = tiegcm.get_column_slicer_4D(p4)
-	z_column, lat_column, lon_column = tiegcm.get_3D_column(column_slicer)
+# 	column_slicer = tiegcm.get_column_slicer_4D(p4)
+# 	z_column, lat_column, lon_column = tiegcm.get_3D_column(column_slicer)
 
-	time_index = column_slicer.time.start
+# 	time_index = column_slicer.time.start
 
-	p = Point3D(*p4[1:])
-	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'TN', time, True)
+# 	p = Point3D(*p4[1:])
+# 	result, (variables0, variables1), (lat_indices0, lat_indices1), (lon_indices0, lon_indices1) = tiegcm.time_interpolate_high_altitude(p, 'TN', time, True)
 	
-	lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
-	assert lat_layers.min() <= p.latitude <= lat_layers.max()
+# 	lat_layers = np.stack((tiegcm.lat[lat_indices0], tiegcm.lat[lat_indices1]))
+# 	assert lat_layers.min() <= p.latitude <= lat_layers.max()
 
-	lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
-	assert lon_layers.min() <= p.longitude <= lon_layers.max()
+# 	lon_layers = np.stack((tiegcm.lon[lon_indices0], tiegcm.lon[lon_indices1]))
+# 	assert lon_layers.min() <= p.longitude <= lon_layers.max()
 	
-	tn_layers = np.stack((variables0, variables1))
-	assert tn_layers.min() <= result <= tn_layers.max() # result is between interpolating triangles
+# 	tn_layers = np.stack((variables0, variables1))
+# 	assert tn_layers.min() <= result <= tn_layers.max() # result is between interpolating triangles
 
-	## interpolation causes the masked values to get filled
-	top_z = z_column[:,-1,:,:]
-	variable = np.array(tiegcm.rootgrp['TN'])[column_slicer]
-	top_tn = variable[:,-1,:,:]
+# 	## interpolation causes the masked values to get filled
+# 	top_z = z_column[:,-1,:,:]
+# 	variable = np.array(tiegcm.rootgrp['TN'])[column_slicer]
+# 	top_tn = variable[:,-1,:,:]
 
-	assert top_tn.min() <= result <= top_tn.max() # result has position between column tops
+# 	assert top_tn.min() <= result <= top_tn.max() # result has position between column tops
 
-	assert tiegcm.rootgrp.variables['TN'].min() <= result <= tiegcm.rootgrp.variables['TN'].max() #result in bounds of available data
+# 	assert tiegcm.rootgrp.variables['TN'].min() <= result <= tiegcm.rootgrp.variables['TN'].max() #result in bounds of available data
 
 
-def test_interpolator_high_altitude_matches():
-	## This should replicate the delaunay test above
-	tiegcm = TIEGCM(test_file)
+# def test_interpolator_high_altitude_matches():
+# 	## This should replicate the delaunay test above
+# 	tiegcm = TIEGCM(test_file)
 
-	z_max = tiegcm.z.max()
-	z_test = 1.1*z_max
+# 	z_max = tiegcm.z.max()
+# 	z_test = 1.1*z_max
 
-	point = Point3D(z_test, -20.5, .5)
+# 	point = Point3D(z_test, -20.5, .5)
 
-	variable_name = 'DEN'
-	time = 3.5
-	result = tiegcm.time_interpolate(point, variable_name, time)
-	result2 = tiegcm.time_interpolate_high_altitude(point, variable_name, time)
-	print result, result2
+# 	variable_name = 'DEN'
+# 	time = 3.5
+# 	result = tiegcm.time_interpolate(point, variable_name, time)
+# 	result2 = tiegcm.time_interpolate_high_altitude(point, variable_name, time)
+# 	print result, result2
 	
-	assert np.isclose(result, result2)	
+# 	assert np.isclose(result, result2)	
 
 
-def test_density_function():
-	tiegcm = TIEGCM(test_file)
-	xlat = -8.81183
-	xlon = 161.96608
-	xalt = 361.10342*1e5 #cm
-	time = 3.5 #ut hours
-	result = tiegcm.density(xlat, xlon, xalt, time)*1e3
-	result2 = tiegcm.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)*1e3
-	print "{} < {} [kg/m^3] ?".format(result, result2)
-	assert result < result2
+# def test_density_function():
+# 	tiegcm = TIEGCM(test_file)
+# 	xlat = -8.81183
+# 	xlon = 161.96608
+# 	xalt = 361.10342*1e5 #cm
+# 	time = 3.5 #ut hours
+# 	result = tiegcm.density(xlat, xlon, xalt, time)*1e3
+# 	result2 = tiegcm.time_interpolate(Point3D(xalt, xlat, xlon), 'DEN', time)*1e3
+# 	print "{} < {} [kg/m^3] ?".format(result, result2)
+# 	assert result < result2
+
 
 def test_time_range():
 	tiegcm = TIEGCM(test_file)
 	start, end = tiegcm.get_time_range()
-	test_start, test_end = pd.Timestamp('2012-10-01 00:00:00'), pd.Timestamp('2012-10-01 08:00:00')
+	test_start, test_end = pd.Timestamp('2015-03-10 00:20:00'), pd.Timestamp('2015-03-10 08:00:00')
 	assert start == test_start
 	assert end == test_end
 
@@ -908,7 +968,10 @@ def test_model_manager_density():
 	test_dir = os.path.dirname(os.path.realpath(test_file))
 	mm = Model_Manager(test_dir)
 
-	time_str = '2012-10-01T01:00:07.833'
+	print 'model manager file times:'
+	for f in sorted(mm.file_times.keys()):
+		print f.split('/')[-1], mm.file_times[f]
+	time_str = '2015-03-10 00:20:00'
 
 	time = pd.Timestamp(time_str)
 	epoch_time = datetime_to_epoch(time)
@@ -920,12 +983,16 @@ def test_model_manager_density():
 	xlon = -156.48846
 	xalt = 360.10342*1e5 #cm
 
+	# import ipdb; ipdb.set_trace()
 	result = tiegcm.density(xlat, xlon, xalt, time_ut)*1e3
-	result2 = mm.density(xlat, xlon, xalt, time_str)*1e3
+	result2 = mm.density(xlat, xlon, xalt, time_str, raise_errors = True)*1e3
 	print "{}: {} = {} [kg/m^3] ?".format(epoch_time, result, result2)
 	assert np.isclose(result, result2)
 
 	result3 = mm.density(xlat, xlon, xalt, 0)
 	assert result3 == 0
+
+	result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = False)
+	print result4
 
 

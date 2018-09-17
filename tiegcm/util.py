@@ -124,7 +124,7 @@ def describe(rootgrp,
 		results = results.append(pd.Series(attrs, index = attributes + ['min', 'max'], name = v))
 	return results
 
-def geo_to_spherical(point3D, ):
+def geo_to_spherical(point3D):
 	r = point3D.height + R_e
 	theta = np.pi*(90 - point3D.latitude)/180
 	phi = np.pi*(180 + point3D.longitude)/180
