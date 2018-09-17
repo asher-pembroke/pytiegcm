@@ -518,7 +518,7 @@ class Model_Manager(TIEGCM):
 		return nc_files
 
 	def set_file_times(self):
-		self.file_times = dict()
+		self.file_times = OrderedDict()
 		for f in self.files:
 			TIEGCM.__init__(self, f)
 			self.file_times[f] = self.get_time_range()
@@ -527,7 +527,6 @@ class Model_Manager(TIEGCM):
 		for filename, interval in self.file_times.items(): 
 			if time_in_interval(time, interval):
 				return filename
-		raise ValueError('Could not find time in files')
 
 	
 	def time_to_ut(self, timestamp):
@@ -544,34 +543,34 @@ class Model_Manager(TIEGCM):
 
 
 	def density(self, xlat, xlon, xalt, gregorian_string, raise_errors = False, debug = False):
-		print xlat, xlon, xalt, gregorian_string, raise_errors
+		if debug:
+			print xlat, xlon, xalt, gregorian_string, raise_errors
 		try:
 			time = pd.to_datetime(gregorian_string)
 			if not time_in_interval(time, self.last_interval):
-				try:
-					filename = self.get_file_for_time(time)
+				filename = self.get_file_for_time(time)
+				if filename is not None:
 					self.last_interval = self.file_times[filename]
 					TIEGCM.__init__(self, filename, self.outermost_layer)
-				except ValueError: 
-					print 'time not in files, checking bounds'
+				else: 
 					closest_files = self.time_in_range(time)
 					if closest_files is not None:
 						t0 = self.file_times[closest_files[0]][1]
 						t1 = self.file_times[closest_files[1]][0]
-						print time, 'between', t0, t1 
-						print 'opening previous file'
+
 						TIEGCM.__init__(self, closest_files[0], self.outermost_layer)
 						tiegcm1 = TIEGCM(closest_files[1], self.outermost_layer)
 
 						d0 = TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(t0))
 						d1 = tiegcm1.density(xlat, xlon, xalt, self.time_to_ut(t1))
-						print d0, d1
-					raise
-			
+						w = (time - t0)/(t1 - t0)
+						return d0*(1.0-w) + d1*w
+					else:
+						raise ValueError('Could not find time in files')
 			return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
 		except:
-			print 'TIEGCM error at xlat: {}, xlon: {}, xalt: {}, gregorian str: {}'.format(xlat, xlon, xalt, gregorian_string)
 			if raise_errors:
+				print 'TIEGCM error at xlat: {}, xlon: {}, xalt: {}, gregorian str: {}'.format(xlat, xlon, xalt, gregorian_string)
 				raise
 			else:
 				return 0
@@ -968,7 +967,7 @@ def test_model_manager_density():
 	test_dir = os.path.dirname(os.path.realpath(test_file))
 	mm = Model_Manager(test_dir)
 
-	print 'model manager file times:'
+	print 'model manager file times:\n'
 	for f in sorted(mm.file_times.keys()):
 		print f.split('/')[-1], mm.file_times[f]
 	time_str = '2015-03-10 00:20:00'
@@ -989,10 +988,13 @@ def test_model_manager_density():
 	print "{}: {} = {} [kg/m^3] ?".format(epoch_time, result, result2)
 	assert np.isclose(result, result2)
 
+	print 'trying result 3'
 	result3 = mm.density(xlat, xlon, xalt, 0)
 	assert result3 == 0
 
-	result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = False)
+	print 'trying result 4'
+	for i in range(20):
+		print i
+		result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = True)
 	print result4
-
 
