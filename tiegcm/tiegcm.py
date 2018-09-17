@@ -69,10 +69,13 @@ class TimeInterpolator(object):
 		self.t0 = t0
 		self.t1 = t1
 	def __call__(self, point, time):
-		w = (time - self.t0)/(self.t1 - self.t0)
 		v0 = self.interpolators[self.t0](point)
-		v1 = self.interpolators[self.t1](point)
-		return v0*(1.0-w) + v1*w
+		if self.t0 != self.t1:
+			w = (time - self.t0)/(self.t1 - self.t0)
+			v1 = self.interpolators[self.t1](point)
+			return v0*(1.0-w) + v1*w
+		else:
+			return v0
 
 class TimeInterpolator2D(object):
 	def __init__(self, interpolators):
@@ -993,8 +996,6 @@ def test_model_manager_density():
 	assert result3 == 0
 
 	print 'trying result 4'
-	for i in range(20):
-		print i
-		result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = True)
+	result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = True)
 	print result4
 
