@@ -283,6 +283,7 @@ class TIEGCM(object):
 			print 'time index:', time_index
 			print slice_key.__repr__()
 			print column_slice.__repr__()
+			# import ipdb; ipdb.set_trace()
 			raise
 		self.set_variable_boundary_condition(slice_key.variable)
 		self.wrap_variable(slice_key.variable)
@@ -296,6 +297,7 @@ class TIEGCM(object):
 			print delaunay.points.shape, variable.shape
 			print delaunay.points[:4,:]
 			print z_column.shape
+			# import ipdb; ipdb.set_trace()
 			raise
 
 	def get_3D_interpolator_cartesian(self, slice_key, time_index):
@@ -307,6 +309,7 @@ class TIEGCM(object):
 			print 'time index:', time_index
 			print slice_key.__repr__()
 			print column_slice.__repr__()
+			# import ipdb; ipdb.set_trace()
 			raise
 		self.set_variable_boundary_condition(slice_key.variable)
 		self.wrap_variable(slice_key.variable)
@@ -339,6 +342,7 @@ class TIEGCM(object):
 			interpolators = OrderedDict([(t, self.get_3D_interpolator(slice_key, i)) for i,t in enumerate(times)])
 		except:
 			print 'create_3Dtime_interpolator - times', times
+			# import ipdb; ipdb.set_trace()
 			raise
 		return TimeInterpolator(interpolators)
 
@@ -402,6 +406,7 @@ class TIEGCM(object):
 			print 'problem in interpolate high altitude:'
 			print self.rootgrp.variables[variable_name].shape
 			print self.rootgrp.variables['Z'].shape
+			# import ipdb; ipdb.set_trace()
 			raise
 		if not return_variable:
 			return float(lnd(p[1:]))
@@ -525,6 +530,7 @@ class Model_Manager(TIEGCM):
 		for f in self.files:
 			TIEGCM.__init__(self, f)
 			self.file_times[f] = self.get_time_range()
+			self.rootgrp.close()
 			
 	def get_file_for_time(self, time):
 		for filename, interval in self.file_times.items(): 
@@ -551,13 +557,19 @@ class Model_Manager(TIEGCM):
 		try:
 			time = pd.to_datetime(gregorian_string)
 			if not time_in_interval(time, self.last_interval):
-				filename = self.get_file_for_time(time)
-				if filename is not None:
-					self.last_interval = self.file_times[filename]
+				try:
+					self.rootgrp.close()
+				except:
+					pass
+				filename = self.get_file_for_time(time) # look for time in file date ranges
+				if filename is not None: # found time in file
+					self.last_interval = self.file_times[filename] # so we can jump straight to interpolation next time
 					TIEGCM.__init__(self, filename, self.outermost_layer)
-				else: 
-					closest_files = self.time_in_range(time)
-					if closest_files is not None:
+				else: # file not in time ranges
+					closest_files = self.time_in_range(time) # see if time is in data gap between files
+					if debug:
+						print closest_files
+					if closest_files is not None: # linearly interpolate between these two
 						t0 = self.file_times[closest_files[0]][1]
 						t1 = self.file_times[closest_files[1]][0]
 
@@ -568,7 +580,7 @@ class Model_Manager(TIEGCM):
 						d1 = tiegcm1.density(xlat, xlon, xalt, self.time_to_ut(t1))
 						w = (time - t0)/(t1 - t0)
 						return d0*(1.0-w) + d1*w
-					else:
+					else: # outside all available data
 						raise ValueError('Could not find time in files')
 			return TIEGCM.density(self, xlat, xlon, xalt, self.time_to_ut(time))
 		except:
@@ -588,6 +600,72 @@ z_test = 39005780. # a mid range test height in cm
 test_file = "sample_data/jasoon_shim_040118_IT_1/s001.nc"
 
 # test_file2 = "sample_data/jasoon_shim_040118_IT_1/s001.nc"
+
+
+def test_time_range():
+	tiegcm = TIEGCM(test_file)
+	start, end = tiegcm.get_time_range()
+	test_start, test_end = pd.Timestamp('2015-03-10 00:20:00'), pd.Timestamp('2015-03-10 08:00:00')
+	assert start == test_start
+	assert end == test_end
+
+
+# def test_model_manager_density():
+# 	# datetime 2012-10-01T01:00:02.000 utcepoch 26201.5416898 xlat: -3.69857 xlon: -156.48846  xalt [km]: 360.01468
+# 	test_dir = os.path.dirname(os.path.realpath(test_file))
+# 	mm = Model_Manager(test_dir)
+
+# 	print 'model manager file times:\n'
+# 	for f in sorted(mm.file_times.keys()):
+# 		print f.split('/')[-1], mm.file_times[f]
+# 	time_str = '2015-03-10 00:20:00'
+
+# 	time = pd.Timestamp(time_str)
+# 	epoch_time = datetime_to_epoch(time)
+# 	time_ut = mm.time_to_ut(time)
+
+# 	tiegcm = TIEGCM(test_file)
+
+# 	xlat = -3.69857
+# 	xlon = -156.48846
+# 	xalt = 360.10342*1e5 #cm
+
+# 	# import ipdb; ipdb.set_trace()
+# 	result = tiegcm.density(xlat, xlon, xalt, time_ut)*1e3
+# 	result2 = mm.density(xlat, xlon, xalt, time_str, raise_errors = True)*1e3
+# 	print "{}: {} = {} [kg/m^3] ?".format(epoch_time, result, result2)
+# 	assert np.isclose(result, result2)
+
+# 	print 'trying result 3'
+# 	result3 = mm.density(xlat, xlon, xalt, 0)
+# 	assert result3 == 0
+
+# 	print 'trying result 4'
+# 	result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = True)
+# 	print result4
+
+
+def test_model_manager_speed():
+	# datetime 2012-10-01T01:00:02.000 utcepoch 26201.5416898 xlat: -3.69857 xlon: -156.48846  xalt [km]: 360.01468
+	test_dir = '~/Downloads/2013.03.01.tie-gcm.data'
+	# test_dir = os.path.dirname(os.path.realpath(test_file))
+	mm = Model_Manager(test_dir)
+
+	print 'model manager file times:\n'
+	for f in sorted(mm.file_times.keys()):
+		print f.split('/')[-1], mm.file_times[f]
+	
+
+	times = pd.date_range(start ='2013-03-01 00:20:00', 
+	                  end = '2013-03-01 08:20:00', 
+	                  freq = '15S')
+	xlat = -3.69857
+	xlon = -156.48846
+	xalt = 360.10342*1e5 #cm
+	for t in times:
+		result = mm.density(xlat, xlon, xalt, t, raise_errors = True, debug = False) 
+		if isclose(result, 0, atol = 1e-30):
+			raise ValueError("result: {} xlat:{} xlon:{} xalt:{} t:{}".format(result, xlat, xlon, xalt, t))
 
 
 # def test_3D_column():
@@ -957,45 +1035,4 @@ test_file = "sample_data/jasoon_shim_040118_IT_1/s001.nc"
 # 	assert result < result2
 
 
-def test_time_range():
-	tiegcm = TIEGCM(test_file)
-	start, end = tiegcm.get_time_range()
-	test_start, test_end = pd.Timestamp('2015-03-10 00:20:00'), pd.Timestamp('2015-03-10 08:00:00')
-	assert start == test_start
-	assert end == test_end
-
-
-def test_model_manager_density():
-	# datetime 2012-10-01T01:00:02.000 utcepoch 26201.5416898 xlat: -3.69857 xlon: -156.48846  xalt [km]: 360.01468
-	test_dir = os.path.dirname(os.path.realpath(test_file))
-	mm = Model_Manager(test_dir)
-
-	print 'model manager file times:\n'
-	for f in sorted(mm.file_times.keys()):
-		print f.split('/')[-1], mm.file_times[f]
-	time_str = '2015-03-10 00:20:00'
-
-	time = pd.Timestamp(time_str)
-	epoch_time = datetime_to_epoch(time)
-	time_ut = mm.time_to_ut(time)
-
-	tiegcm = TIEGCM(test_file)
-
-	xlat = -3.69857
-	xlon = -156.48846
-	xalt = 360.10342*1e5 #cm
-
-	# import ipdb; ipdb.set_trace()
-	result = tiegcm.density(xlat, xlon, xalt, time_ut)*1e3
-	result2 = mm.density(xlat, xlon, xalt, time_str, raise_errors = True)*1e3
-	print "{}: {} = {} [kg/m^3] ?".format(epoch_time, result, result2)
-	assert np.isclose(result, result2)
-
-	print 'trying result 3'
-	result3 = mm.density(xlat, xlon, xalt, 0)
-	assert result3 == 0
-
-	print 'trying result 4'
-	result4 = mm.density(xlat, xlon, xalt, '2015-03-10 08:10:00', raise_errors = True, debug = True)
-	print result4
 
