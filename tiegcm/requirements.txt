@@ -6,7 +6,6 @@ backports.ssl-match-hostname==3.5.0.1
 beautifulsoup4==4.5.3
 bleach==1.5.0
 certifi==2017.1.23
-cmake-example==0.0.1
 colorlover==0.2.1
 configparser==3.5.0
 cppimport==17.10.25
@@ -51,7 +50,7 @@ pandocfilters==1.4.1
 pathlib2==2.2.0
 pexpect==4.2.1
 pickleshare==0.7.4
-Pillow==4.4.0
+Pillow==4.3.0
 plotly==2.0.8
 prompt-toolkit==1.0.13
 ptyprocess==0.5.1
@@ -60,9 +59,7 @@ pybind11==2.2.1
 Pygments==2.2.0
 pyparsing==2.2.0
 pytest==3.2.3
-python-cpp-example==0.1
 python-dateutil==2.6.0
-pyTIEGCM==0.1.dev0
 pytz==2017.2
 PyYAML==3.12
 pyzmq==16.0.2
@@ -71,7 +68,7 @@ requests==2.13.0
 rson==0.9
 scandir==1.5
 scikit-image==0.12.3
-scipy==0.19.0
+scipy==1.1.0
 simplegeneric==0.8.1
 simplejson==3.13.2
 singledispatch==3.4.0.3
