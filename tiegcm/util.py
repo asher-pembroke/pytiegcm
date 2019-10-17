@@ -86,20 +86,23 @@ boundary_conditions = dict( TEC = 'average',
                             N2D_ELD = 'average',
                             O2N = 'average',
                             N2N = 'average',
-                            ZMAG = 'average',                           
+                            ZMAG = 'average',
+                            N2 = 'average',
+                            ZGMID = 'average',
+
                           )
 
 def group_dimensional(rootgrp, verbose = False):
 	dimensional = defaultdict(list)
-	for k,v in rootgrp.variables.items():
+	for k,v in list(rootgrp.variables.items()):
 		for i in range(5):
 			if len(v.shape) == i:
 				dimensional[str(i)+'-d'].append(k)
 	
 	if verbose:
-		for k,v in dimensional.items():
-			print k
-			print describe(rootgrp, dimensional[k])
+		for k,v in list(dimensional.items()):
+			print(k)
+			print(describe(rootgrp, dimensional[k]))
 	return dimensional
 
 def describe(rootgrp, 
@@ -171,16 +174,16 @@ def average_longitude(a, verbose = False):
 		south_avg = np.mean(a[:,:,0,:].T, axis = 0).T
 		south_avg = south_avg.repeat(nlon, axis = 1).reshape((ntime, nilev, nlon))
 		if verbose:
-			print 'south min, max', south_avg.min(), south_avg.max()
+			print('south min, max', south_avg.min(), south_avg.max())
 
 		north_avg = np.mean(a[:,:,-1,:].T, axis = 0).T
 		north_avg = north_avg.repeat(nlon, axis = 1).reshape((ntime, nilev, nlon))
 		if verbose:
-			print 'north min, max', north_avg.min(), north_avg.max()
+			print('north min, max', north_avg.min(), north_avg.max())
 
 		result = np.insert(a, 0, south_avg, axis = 2)
 		if verbose:
-			print 'after south insert, min, max', result.min(), result.max()
+			print('after south insert, min, max', result.min(), result.max())
 		result = np.insert(result, result.shape[2], north_avg, axis = 2)
 	else: #3d variable
 		ntime, nlat, nlon = a.shape
