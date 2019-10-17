@@ -5,6 +5,7 @@ This project is used for building interpolators and analysis tools for the TIEGC
 * netCDF4
 * numpy
 * pandas
+* scipy
 
 ## Changlog
 
